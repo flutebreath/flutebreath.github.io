@@ -333,3 +333,44 @@ input[type="range"] {
   border: 1px solid var(--accent-dim);
   color: var(--accent);
 }
+
+.app-footer {
+  max-width: 480px;
+  margin: 8px auto 0;
+  padding: 20px 20px calc(28px + env(safe-area-inset-bottom));
+  text-align: center;
+  border-top: 1px solid var(--panel-border);
+}
+
+.footer-note {
+  margin: 0 0 12px;
+  font-size: 0.78rem;
+  color: var(--text-dim);
+  line-height: 1.5;
+}
+
+.footer-credit {
+  margin: 0;
+  font-size: 0.78rem;
+  color: var(--text-dim);
+}
+
+.footer-credit a {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--accent);
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.footer-credit a:hover,
+.footer-credit a:active {
+  text-decoration: underline;
+}
+
+.ig-icon {
+  width: 15px;
+  height: 15px;
+  flex-shrink: 0;
+}
