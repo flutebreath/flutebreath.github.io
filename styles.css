@@ -343,34 +343,34 @@ input[type="range"] {
 }
 
 .footer-note {
-  margin: 0 0 12px;
+  margin: 0 0 14px;
   font-size: 0.78rem;
   color: var(--text-dim);
   line-height: 1.5;
 }
 
 .footer-credit {
-  margin: 0;
+  margin: 0 0 4px;
   font-size: 0.78rem;
   color: var(--text-dim);
 }
 
-.footer-credit a {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
+.footer-instagram {
+  margin: 0;
+  font-size: 0.72rem;
+  color: var(--text-dim);
+}
+
+.footer-credit a,
+.footer-instagram a {
   color: var(--accent);
   text-decoration: none;
   font-weight: 600;
 }
 
 .footer-credit a:hover,
-.footer-credit a:active {
+.footer-credit a:active,
+.footer-instagram a:hover,
+.footer-instagram a:active {
   text-decoration: underline;
-}
-
-.ig-icon {
-  width: 15px;
-  height: 15px;
-  flex-shrink: 0;
 }
