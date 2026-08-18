@@ -1,24 +1,25 @@
-# Flute Sustain Timer
+# Flute Breath Timer
 
 A browser-based, microphone-activated timer for flute players. It detects when a
 flute note starts and stops, and measures the sustain duration automatically —
 no need to touch the screen while you're playing.
 
-Named "Sustain Timer" rather than "Breath Timer" because the app measures the
-duration of the audible flute tone, not your breath itself (your breath starts
-before the flute produces sound, so the microphone can't measure that part).
+Note: what the microphone actually measures is the duration of the audible
+flute tone, not your breath itself (your breath starts before the flute
+produces sound, so the mic can't capture that part) — but "breath timer"
+is how the exercise is practiced and talked about, so that's the name.
 
 ## How to use it
 
 1. Open the page.
 2. Grant microphone permission when prompted.
-3. Press **ARM**.
+3. Press **Start Listening**.
 4. Put the phone/laptop near the flute.
 5. Play a note. The timer starts automatically once the note is detected.
 6. Stop playing. The timer stops automatically once the note ends.
 7. The result is added to your attempt history immediately, and the app goes
    back to listening — play as many notes as you like without touching the
-   screen. Press **DISARM** when you're done.
+   screen. Press **Stop Listening** when you're done.
 
 ## How detection works
 
@@ -62,7 +63,7 @@ silence, even if the room was never truly silent to begin with."
 
 Two more guards round out false-trigger protection:
 
-- **Arm warm-up** — the first 600ms after pressing ARM is shown on the meter
+- **Arm warm-up** — the first 600ms after pressing Start Listening is shown on the meter
   but never fed to the detector, since connecting the mic and physically
   picking up/positioning the device both tend to produce a brief loud
   transient that isn't the flute.
@@ -78,10 +79,10 @@ delta.
 
 ## Microphone permissions
 
-The browser will prompt for microphone access the first time you press ARM.
-If you deny it (or dismiss the prompt), the app shows an inline error and
-stays in the READY state — press ARM again to retry. Most browsers remember
-your choice for the site afterwards.
+The browser will prompt for microphone access the first time you press
+Start Listening. If you deny it (or dismiss the prompt), the app shows an
+inline error and stays in the READY state — press Start Listening again to
+retry. Most browsers remember your choice for the site afterwards.
 
 Echo cancellation, noise suppression, and auto gain control are explicitly
 disabled on the microphone track (`js/audioInput.js`), since those are tuned

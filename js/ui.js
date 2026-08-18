@@ -70,7 +70,7 @@ export class UI {
 
   setArmed(armed) {
     this.el.armButton.dataset.armed = String(armed);
-    this.el.armButton.textContent = armed ? "DISARM" : "ARM";
+    this.el.armButton.textContent = armed ? "Stop Listening" : "Start Listening";
   }
 
   setMeter(levelDb, startThresholdDb, floorDb) {
