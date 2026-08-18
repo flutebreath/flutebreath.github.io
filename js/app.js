@@ -72,7 +72,10 @@ function renderStats() {
     bestMs: sessionManager.bestMs(),
     avgMs: sessionManager.averageMs(),
   });
-  ui.renderHistory(sessionManager.attempts, sessionManager.bestMs());
+  ui.renderHistory(sessionManager.attempts, sessionManager.bestMs(), (id) => {
+    sessionManager.removeAttempt(id);
+    renderStats();
+  });
 }
 
 async function acquireWakeLock() {

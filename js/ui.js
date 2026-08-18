@@ -92,7 +92,7 @@ export class UI {
     this.el.avgStat.textContent = avgMs == null ? "—" : `${formatDuration(avgMs)}s`;
   }
 
-  renderHistory(attempts, bestMs) {
+  renderHistory(attempts, bestMs, onDelete) {
     const list = this.el.historyList;
     list.innerHTML = "";
 
@@ -111,7 +111,27 @@ export class UI {
         const attemptNumber = attempts.length - idx;
         const li = document.createElement("li");
         if (attempt.durationMs === bestMs) li.classList.add("is-best");
-        li.innerHTML = `<span>Attempt ${attemptNumber}</span><span>${formatDuration(attempt.durationMs)} s</span>`;
+
+        const label = document.createElement("span");
+        label.textContent = `Attempt ${attemptNumber}`;
+
+        const right = document.createElement("span");
+        right.className = "history-right";
+
+        const value = document.createElement("span");
+        value.textContent = `${formatDuration(attempt.durationMs)} s`;
+
+        const deleteBtn = document.createElement("button");
+        deleteBtn.type = "button";
+        deleteBtn.className = "history-delete";
+        deleteBtn.setAttribute("aria-label", `Delete attempt ${attemptNumber}`);
+        deleteBtn.textContent = "×";
+        deleteBtn.addEventListener("click", () => onDelete?.(attempt.id));
+
+        right.appendChild(value);
+        right.appendChild(deleteBtn);
+        li.appendChild(label);
+        li.appendChild(right);
         list.appendChild(li);
       });
   }

@@ -288,11 +288,39 @@ input[type="range"] {
 .history-list li {
   display: flex;
   justify-content: space-between;
+  align-items: center;
   padding: 8px 10px;
   border-radius: 8px;
   background: #0e1420;
   font-size: 0.9rem;
   font-variant-numeric: tabular-nums;
+}
+
+.history-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.history-delete {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: 1px solid var(--panel-border);
+  background: none;
+  color: var(--text-dim);
+  font-size: 1rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.history-delete:active {
+  transform: scale(0.95);
+  color: var(--danger);
+  border-color: var(--danger);
 }
 
 .history-empty {

@@ -92,9 +92,10 @@ for voice calls and tend to suppress or distort a sustained musical tone.
 
 All audio processing happens locally in your browser using the Web Audio
 API. **Audio is never uploaded, recorded to disk, or sent to any server** —
-there is no backend at all. Session attempt history lives only in memory for
-the current page load and disappears on refresh (this is intentional for
-v1 — see Roadmap below).
+there is no backend at all. Attempt history is saved to your browser's
+`localStorage` (`js/sessionManager.js`) so it survives a page reload, but it
+never leaves your device. Use **Reset session** to clear all of it, or the
+× next to an individual attempt to remove just that one.
 
 ## Project structure
 
@@ -145,8 +146,8 @@ reliable before adding more:
   partly superseded by the continuous adaptive noise floor described above,
   but a one-time step could still give a better starting point than the
   600ms warm-up alone
-- Persistent practice history across sessions (localStorage/IndexedDB) with
-  daily best/average tracking
+- Daily/weekly progress tracking on top of the persisted attempt list
+  already in place (e.g. "personal best," "7-day average," a trend graph)
 - Microphone selection when multiple inputs are available
 - Frequency-based detection (FFT tonal/pitch analysis) to reduce false
   triggers further, on top of the current amplitude-only detection
