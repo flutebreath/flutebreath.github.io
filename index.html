@@ -4,16 +4,115 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover" />
 <meta name="theme-color" content="#0b0f14" />
-<title>Flute Breath Timer</title>
+<title>Flute Breath Timer — Free Breath &amp; Sustain Practice Tool</title>
+<meta name="description" content="Free online tool for flute players to practice breath control. Times how long you sustain each note using your microphone — no login, nothing uploaded." />
+<link rel="canonical" href="https://flutebreath.github.io/" />
+
+<meta property="og:type" content="website" />
+<meta property="og:site_name" content="Flute Breath Timer" />
+<meta property="og:title" content="Flute Breath Timer — Free Breath & Sustain Practice Tool" />
+<meta property="og:description" content="Free online tool for flute players to practice breath control. Times how long you sustain each note using your microphone — no login, nothing uploaded." />
+<meta property="og:url" content="https://flutebreath.github.io/" />
+<meta property="og:image" content="https://flutebreath.github.io/og-image.png" />
+<meta property="og:image:width" content="1200" />
+<meta property="og:image:height" content="630" />
+
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content="Flute Breath Timer — Free Breath & Sustain Practice Tool" />
+<meta name="twitter:description" content="Free online tool for flute players to practice breath control. Times how long you sustain each note using your microphone — no login, nothing uploaded." />
+<meta name="twitter:image" content="https://flutebreath.github.io/og-image.png" />
+
 <link rel="icon" href="favicon.svg" type="image/svg+xml" />
 <link rel="icon" href="favicon-32.png" type="image/png" sizes="32x32" />
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png" />
 <link rel="stylesheet" href="styles.css" />
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  "name": "Flute Breath Timer",
+  "url": "https://flutebreath.github.io/",
+  "description": "Free browser tool for flute players to practice breath control. Automatically times how long you sustain each note using your microphone, with no login and nothing uploaded.",
+  "applicationCategory": "MusicApplication",
+  "operatingSystem": "Any (runs in a web browser)",
+  "offers": {
+    "@type": "Offer",
+    "price": "0",
+    "priceCurrency": "USD"
+  },
+  "author": {
+    "@type": "Person",
+    "name": "Kumar.Thinks",
+    "url": "https://www.instagram.com/kumar.thinks/"
+  }
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "What is Flute Breath Timer?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "A free browser-based tool that automatically times how long you sustain a note on the flute. It listens through your microphone and detects when a note starts and stops, so you don't need to press any buttons while you're playing."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Do I need to install anything?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "No. It runs entirely in your browser at flutebreath.github.io — no app store, no download, and no account to create."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Is my microphone audio uploaded or recorded?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "No. All audio processing happens locally in your browser using the Web Audio API. Nothing is ever uploaded, recorded to a file, or sent to a server."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Does it work on iPhone and other mobile devices?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Yes. Open the site in a mobile browser like Safari, allow microphone access, and it works like any other page. You can also add it to your home screen for quicker access."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Can I use it for instruments other than flute?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "The detection is based on loudness rather than flute tone specifically, so it can time any sustained note — though it's built and named around flute breath practice."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Is it free?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Yes, completely free, with no ads, no account, and no in-app purchases."
+      }
+    }
+  ]
+}
+</script>
 </head>
 <body>
   <main class="app">
     <header class="app-header">
       <h1>Flute Breath Timer</h1>
+      <p class="tagline">
+        Automatically times how long you sustain a note on the flute using your microphone — no buttons to press
+        mid-note.
+      </p>
       <p class="privacy-note">
         Microphone audio is processed locally in your browser. It is never uploaded or stored.
       </p>
@@ -91,6 +190,56 @@
       <ol class="history-list" id="historyList">
         <li class="history-empty">No attempts yet</li>
       </ol>
+    </section>
+
+    <section class="faq-panel" aria-labelledby="faqHeading">
+      <h2 id="faqHeading">Frequently asked questions</h2>
+
+      <details class="faq-item">
+        <summary>What is Flute Breath Timer?</summary>
+        <p>
+          A free browser-based tool that automatically times how long you sustain a note on the flute. It listens
+          through your microphone and detects when a note starts and stops, so you don't need to press any buttons
+          while you're playing.
+        </p>
+      </details>
+
+      <details class="faq-item">
+        <summary>Do I need to install anything?</summary>
+        <p>
+          No. It runs entirely in your browser at flutebreath.github.io — no app store, no download, and no account
+          to create.
+        </p>
+      </details>
+
+      <details class="faq-item">
+        <summary>Is my microphone audio uploaded or recorded?</summary>
+        <p>
+          No. All audio processing happens locally in your browser using the Web Audio API. Nothing is ever
+          uploaded, recorded to a file, or sent to a server.
+        </p>
+      </details>
+
+      <details class="faq-item">
+        <summary>Does it work on iPhone and other mobile devices?</summary>
+        <p>
+          Yes. Open the site in a mobile browser like Safari, allow microphone access, and it works like any other
+          page. You can also add it to your home screen for quicker access.
+        </p>
+      </details>
+
+      <details class="faq-item">
+        <summary>Can I use it for instruments other than flute?</summary>
+        <p>
+          The detection is based on loudness rather than flute tone specifically, so it can time any sustained note
+          — though it's built and named around flute breath practice.
+        </p>
+      </details>
+
+      <details class="faq-item">
+        <summary>Is it free?</summary>
+        <p>Yes, completely free, with no ads, no account, and no in-app purchases.</p>
+      </details>
     </section>
   </main>
 
