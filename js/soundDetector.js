@@ -90,10 +90,14 @@ export class SoundDetector {
       case DetectorState.CONFIRM_START:
         if (levelDb >= this.startThresholdDb) {
           if (now - this._pendingSince >= this.startConfirmMs) {
-            this._noteStartedAt = now;
+            // Backdate to when the sound first crossed the threshold, not
+            // when we finished confirming it — the confirmation window is
+            // purely to filter out blips, it shouldn't shift the measured
+            // start later than the note actually began.
+            this._noteStartedAt = this._pendingSince;
             this._notePeakDb = levelDb;
             this.state = DetectorState.TIMING;
-            this.onStart(now);
+            this.onStart(this._noteStartedAt);
           }
         } else {
           // Dropped back down before confirmation — treat as noise, abort.
@@ -114,13 +118,17 @@ export class SoundDetector {
         this._notePeakDb = Math.max(this._notePeakDb, levelDb);
         if (this._isQuiet(levelDb)) {
           if (now - this._pendingSince >= this.stopConfirmMs) {
+            // Likewise, end the measurement at the moment it actually went
+            // quiet, not at the end of the confirmation window — otherwise
+            // every attempt is inflated by however long stopConfirmMs is.
             const startedAt = this._noteStartedAt;
-            const durationMs = now - startedAt;
+            const stoppedAt = this._pendingSince;
+            const durationMs = stoppedAt - startedAt;
             this.state = DetectorState.LISTENING;
             this._pendingSince = null;
             this._noteStartedAt = null;
             this._notePeakDb = null;
-            this.onStop(startedAt, now, durationMs);
+            this.onStop(startedAt, stoppedAt, durationMs);
           }
         } else {
           // Sound recovered (vibrato/breath dip) — resume timing without a gap.
