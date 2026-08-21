@@ -24,24 +24,16 @@ function sensitivityTag(marginDb) {
 const SVG_NS = "http://www.w3.org/2000/svg";
 const CONSISTENCY_VIEWBOX_W = 300;
 const CONSISTENCY_VIEWBOX_H = 60;
-const CONSISTENCY_BAR_MIN_H = 4;
+// A bar for a perfectly flat (very steady) note still needs to be
+// perceptible even in the small per-row graphs (22px tall), not just the
+// big 70px one — 4 units of a 60-unit viewBox is under a pixel there.
+const CONSISTENCY_BAR_MIN_H = 8;
 const CONSISTENCY_BAR_GAP = 1.5;
-// How many recent attempts the trend graph shows — keeps bars legible
-// instead of shrinking to nothing over a long practice history.
-const TREND_WINDOW = 30;
-// Maps stdDev (dB) to a 0-100 score for the trend graph, where higher is
-// steadier. Chosen so the range we've actually observed in testing
-// (~0dB rock-steady to ~10-11dB deliberately wavering) spans roughly 0-100.
-const TREND_SCORE_PER_DB = 8;
 
 function levelsStdDev(levels) {
   const mean = levels.reduce((sum, v) => sum + v, 0) / levels.length;
   const variance = levels.reduce((sum, v) => sum + (v - mean) ** 2, 0) / levels.length;
   return Math.sqrt(variance);
-}
-
-function steadinessScore(stdDev) {
-  return Math.max(0, Math.min(100, Math.round(100 - stdDev * TREND_SCORE_PER_DB)));
 }
 
 // stdDev of raw dB samples within one note — real dB units, so these
@@ -51,6 +43,35 @@ function consistencyLabel(stdDev) {
   if (stdDev <= 2.5) return "Steady";
   if (stdDev <= 4.5) return "Some variation";
   return "Wavering";
+}
+
+// Draws the loudness-over-time bars into an existing (empty) <svg>, scaled
+// to that note's own min/max so shape is legible regardless of absolute
+// volume. Bar count == sample count, so longer notes naturally read as
+// thinner, denser bars — shared by the big last-attempt graph and the
+// compact per-row ones in history. Returns false (and leaves the svg empty)
+// when there's not enough data to draw anything meaningful.
+function buildConsistencyBars(svg, levels) {
+  svg.innerHTML = "";
+  if (!levels || levels.length < 2) return false;
+
+  const min = Math.min(...levels);
+  const max = Math.max(...levels);
+  const range = Math.max(max - min, 1);
+  const barWidth = CONSISTENCY_VIEWBOX_W / levels.length;
+
+  levels.forEach((level, i) => {
+    const normalized = (level - min) / range;
+    const barHeight = CONSISTENCY_BAR_MIN_H + normalized * (CONSISTENCY_VIEWBOX_H - CONSISTENCY_BAR_MIN_H);
+    const rect = document.createElementNS(SVG_NS, "rect");
+    rect.setAttribute("x", (i * barWidth + CONSISTENCY_BAR_GAP / 2).toFixed(2));
+    rect.setAttribute("y", (CONSISTENCY_VIEWBOX_H - barHeight).toFixed(2));
+    rect.setAttribute("width", Math.max(barWidth - CONSISTENCY_BAR_GAP, 0.5).toFixed(2));
+    rect.setAttribute("height", barHeight.toFixed(2));
+    rect.setAttribute("rx", "1");
+    svg.appendChild(rect);
+  });
+  return true;
 }
 
 export class UI {
@@ -75,9 +96,6 @@ export class UI {
       consistencyTag: document.getElementById("consistencyTag"),
       consistencyGraph: document.getElementById("consistencyGraph"),
       consistencyEmpty: document.getElementById("consistencyEmpty"),
-      consistencyTrendTag: document.getElementById("consistencyTrendTag"),
-      consistencyTrendGraph: document.getElementById("consistencyTrendGraph"),
-      consistencyTrendEmpty: document.getElementById("consistencyTrendEmpty"),
     };
   }
 
@@ -151,7 +169,17 @@ export class UI {
         if (attempt.durationMs === bestMs) li.classList.add("is-best");
 
         const label = document.createElement("span");
+        label.className = "history-label";
         label.textContent = `Attempt ${attemptNumber}`;
+
+        const graphWrap = document.createElement("span");
+        graphWrap.className = "history-graph-wrap";
+        const graphSvg = document.createElementNS(SVG_NS, "svg");
+        graphSvg.classList.add("consistency-graph");
+        graphSvg.setAttribute("viewBox", `0 0 ${CONSISTENCY_VIEWBOX_W} ${CONSISTENCY_VIEWBOX_H}`);
+        graphSvg.setAttribute("preserveAspectRatio", "none");
+        buildConsistencyBars(graphSvg, attempt.levels);
+        graphWrap.appendChild(graphSvg);
 
         const right = document.createElement("span");
         right.className = "history-right";
@@ -169,6 +197,7 @@ export class UI {
         right.appendChild(value);
         right.appendChild(deleteBtn);
         li.appendChild(label);
+        li.appendChild(graphWrap);
         li.appendChild(right);
         list.appendChild(li);
       });
@@ -179,10 +208,10 @@ export class UI {
   renderConsistency(attempt) {
     const svg = this.el.consistencyGraph;
     const levels = attempt?.levels ?? [];
+    const hasData = buildConsistencyBars(svg, levels);
 
-    if (levels.length < 2) {
+    if (!hasData) {
       svg.setAttribute("hidden", "");
-      svg.innerHTML = "";
       this.el.consistencyEmpty.hidden = false;
       this.el.consistencyTag.textContent = "—";
       return;
@@ -190,68 +219,7 @@ export class UI {
 
     this.el.consistencyEmpty.hidden = true;
     svg.removeAttribute("hidden");
-
     const stdDev = levelsStdDev(levels);
     this.el.consistencyTag.textContent = `${consistencyLabel(stdDev)} (±${stdDev.toFixed(1)} dB)`;
-
-    const min = Math.min(...levels);
-    const max = Math.max(...levels);
-    const range = Math.max(max - min, 1);
-
-    svg.innerHTML = "";
-    const barWidth = CONSISTENCY_VIEWBOX_W / levels.length;
-    levels.forEach((level, i) => {
-      const normalized = (level - min) / range;
-      const barHeight = CONSISTENCY_BAR_MIN_H + normalized * (CONSISTENCY_VIEWBOX_H - CONSISTENCY_BAR_MIN_H);
-      const rect = document.createElementNS(SVG_NS, "rect");
-      rect.setAttribute("x", (i * barWidth + CONSISTENCY_BAR_GAP / 2).toFixed(2));
-      rect.setAttribute("y", (CONSISTENCY_VIEWBOX_H - barHeight).toFixed(2));
-      rect.setAttribute("width", Math.max(barWidth - CONSISTENCY_BAR_GAP, 0.5).toFixed(2));
-      rect.setAttribute("height", barHeight.toFixed(2));
-      rect.setAttribute("rx", "1");
-      svg.appendChild(rect);
-    });
-  }
-
-  // attempts: the full session, chronological (oldest first). Shows one bar
-  // per recent attempt so progress reads left-to-right, taller = steadier.
-  // Attempts recorded before this feature existed have no levels data —
-  // those render as short muted bars rather than being mistaken for a bad score.
-  renderConsistencyTrend(attempts) {
-    const svg = this.el.consistencyTrendGraph;
-    const windowed = attempts.slice(-TREND_WINDOW);
-    const scored = windowed.map((a) => (a.levels && a.levels.length >= 2 ? steadinessScore(levelsStdDev(a.levels)) : null));
-
-    if (windowed.length < 2 || scored.every((s) => s === null)) {
-      svg.setAttribute("hidden", "");
-      svg.innerHTML = "";
-      this.el.consistencyTrendEmpty.hidden = false;
-      this.el.consistencyTrendTag.textContent = "—";
-      return;
-    }
-
-    this.el.consistencyTrendEmpty.hidden = true;
-    svg.removeAttribute("hidden");
-
-    const withData = scored.filter((s) => s !== null);
-    const avgScore = Math.round(withData.reduce((sum, s) => sum + s, 0) / withData.length);
-    this.el.consistencyTrendTag.textContent = `Avg ${avgScore}/100`;
-
-    svg.innerHTML = "";
-    const barWidth = CONSISTENCY_VIEWBOX_W / scored.length;
-    scored.forEach((score, i) => {
-      const hasData = score !== null;
-      const barHeight = hasData
-        ? CONSISTENCY_BAR_MIN_H + (score / 100) * (CONSISTENCY_VIEWBOX_H - CONSISTENCY_BAR_MIN_H)
-        : CONSISTENCY_BAR_MIN_H;
-      const rect = document.createElementNS(SVG_NS, "rect");
-      rect.setAttribute("x", (i * barWidth + CONSISTENCY_BAR_GAP / 2).toFixed(2));
-      rect.setAttribute("y", (CONSISTENCY_VIEWBOX_H - barHeight).toFixed(2));
-      rect.setAttribute("width", Math.max(barWidth - CONSISTENCY_BAR_GAP, 0.5).toFixed(2));
-      rect.setAttribute("height", barHeight.toFixed(2));
-      rect.setAttribute("rx", "1");
-      if (!hasData) rect.classList.add("no-data");
-      svg.appendChild(rect);
-    });
   }
 }

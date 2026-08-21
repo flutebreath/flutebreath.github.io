@@ -171,31 +171,18 @@
     </section>
 
     <section class="consistency-panel">
-      <h2 class="consistency-title">Blow consistency</h2>
-
-      <div class="consistency-block">
-        <div class="consistency-header">
-          <span>Last attempt</span>
-          <span class="consistency-tag" id="consistencyTag">&mdash;</span>
-        </div>
-        <div class="consistency-graph-wrap">
-          <p class="consistency-empty" id="consistencyEmpty">Play a note to see your blow consistency here.</p>
-          <svg class="consistency-graph" id="consistencyGraph" viewBox="0 0 300 60" preserveAspectRatio="none" hidden></svg>
-        </div>
-        <p class="consistency-hint">Even bars mean a steady blow; tall spikes and dips mean your volume is wavering.</p>
+      <div class="consistency-header">
+        <span>Blow consistency (last attempt)</span>
+        <span class="consistency-tag" id="consistencyTag">&mdash;</span>
       </div>
-
-      <div class="consistency-block">
-        <div class="consistency-header">
-          <span>Trend across session</span>
-          <span class="consistency-tag" id="consistencyTrendTag">&mdash;</span>
-        </div>
-        <div class="consistency-graph-wrap">
-          <p class="consistency-empty" id="consistencyTrendEmpty">Play a few notes to see your consistency trend.</p>
-          <svg class="consistency-graph" id="consistencyTrendGraph" viewBox="0 0 300 60" preserveAspectRatio="none" hidden></svg>
-        </div>
-        <p class="consistency-hint">Each bar is one attempt, oldest to newest — taller means steadier that time.</p>
+      <div class="consistency-graph-wrap">
+        <p class="consistency-empty" id="consistencyEmpty">Play a note to see your blow consistency here.</p>
+        <svg class="consistency-graph" id="consistencyGraph" viewBox="0 0 300 60" preserveAspectRatio="none" hidden></svg>
       </div>
+      <p class="consistency-hint">
+        Even bars mean a steady blow; tall spikes and dips mean your volume is wavering. Each attempt in the history
+        below shows its own shape too.
+      </p>
     </section>
 
     <section class="history-panel">

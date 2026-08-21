@@ -261,16 +261,6 @@ input[type="range"] {
   font-variant-numeric: tabular-nums;
 }
 
-.consistency-title {
-  margin: 0 0 14px;
-  font-size: 0.95rem;
-  font-weight: 700;
-}
-
-.consistency-block + .consistency-block {
-  margin-top: 20px;
-}
-
 .consistency-header {
   display: flex;
   justify-content: space-between;
@@ -306,10 +296,6 @@ input[type="range"] {
 
 .consistency-graph rect {
   fill: var(--accent);
-}
-
-.consistency-graph rect.no-data {
-  fill: var(--panel-border);
 }
 
 .consistency-empty {
@@ -370,8 +356,8 @@ input[type="range"] {
 
 .history-list li {
   display: flex;
-  justify-content: space-between;
   align-items: center;
+  gap: 10px;
   padding: 8px 10px;
   border-radius: 8px;
   background: #0e1420;
@@ -379,7 +365,27 @@ input[type="range"] {
   font-variant-numeric: tabular-nums;
 }
 
+.history-label {
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+
+.history-graph-wrap {
+  flex: 1 1 auto;
+  min-width: 40px;
+  max-width: 180px;
+  height: 26px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.03);
+  overflow: hidden;
+}
+
+.history-graph-wrap .consistency-graph {
+  opacity: 0.85;
+}
+
 .history-right {
+  flex: 0 0 auto;
   display: flex;
   align-items: center;
   gap: 8px;
