@@ -9,9 +9,9 @@ function loadAttempts() {
     if (!raw) return [];
     const parsed = JSON.parse(raw);
     if (!Array.isArray(parsed)) return [];
-    return parsed.filter(
-      (a) => a && typeof a.id === "string" && typeof a.durationMs === "number" && typeof a.at === "number"
-    );
+    return parsed
+      .filter((a) => a && typeof a.id === "string" && typeof a.durationMs === "number" && typeof a.at === "number")
+      .map((a) => ({ ...a, levels: Array.isArray(a.levels) ? a.levels : [] }));
   } catch {
     return [];
   }
@@ -35,8 +35,9 @@ export class SessionManager {
     this.attempts = loadAttempts();
   }
 
-  addAttempt(durationMs) {
-    const attempt = { id: makeId(), durationMs, at: Date.now() };
+  // levels: rounded dB samples taken through the note, for the blow-consistency graph.
+  addAttempt(durationMs, levels = []) {
+    const attempt = { id: makeId(), durationMs, at: Date.now(), levels };
     this.attempts.push(attempt);
     saveAttempts(this.attempts);
     return attempt;

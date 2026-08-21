@@ -253,6 +253,67 @@ input[type="range"] {
   font-variant-numeric: tabular-nums;
 }
 
+.consistency-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+  font-size: 0.85rem;
+  color: var(--text-dim);
+}
+
+.consistency-tag {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--accent);
+}
+
+.consistency-graph-wrap {
+  position: relative;
+  height: 70px;
+  border-radius: 8px;
+  background: #0e1420;
+  overflow: hidden;
+}
+
+.consistency-graph {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.consistency-graph[hidden] {
+  display: none;
+}
+
+.consistency-graph rect {
+  fill: var(--accent);
+}
+
+.consistency-empty {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0;
+  padding: 0 12px;
+  text-align: center;
+  font-size: 0.78rem;
+  color: var(--text-dim);
+}
+
+.consistency-empty[hidden] {
+  display: none;
+}
+
+.consistency-hint {
+  margin: 8px 0 0;
+  font-size: 0.7rem;
+  color: var(--text-dim);
+  line-height: 1.4;
+}
+
 .history-header {
   display: flex;
   justify-content: space-between;

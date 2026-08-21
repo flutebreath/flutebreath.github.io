@@ -21,6 +21,21 @@ function sensitivityTag(marginDb) {
   return "Low";
 }
 
+const SVG_NS = "http://www.w3.org/2000/svg";
+const CONSISTENCY_VIEWBOX_W = 300;
+const CONSISTENCY_VIEWBOX_H = 60;
+const CONSISTENCY_BAR_MIN_H = 4;
+const CONSISTENCY_BAR_GAP = 1.5;
+
+// stdDev of raw dB samples within one note — real dB units, so these
+// thresholds are physically meaningful rather than arbitrary percentages.
+function consistencyLabel(stdDev) {
+  if (stdDev <= 1.2) return "Very steady";
+  if (stdDev <= 2.5) return "Steady";
+  if (stdDev <= 4.5) return "Some variation";
+  return "Wavering";
+}
+
 export class UI {
   constructor() {
     this.el = {
@@ -40,6 +55,9 @@ export class UI {
       avgStat: document.getElementById("avgStat"),
       historyList: document.getElementById("historyList"),
       resetButton: document.getElementById("resetButton"),
+      consistencyTag: document.getElementById("consistencyTag"),
+      consistencyGraph: document.getElementById("consistencyGraph"),
+      consistencyEmpty: document.getElementById("consistencyEmpty"),
     };
   }
 
@@ -134,5 +152,46 @@ export class UI {
         li.appendChild(right);
         list.appendChild(li);
       });
+  }
+
+  // attempt: the most recent attempt, or null. Draws a bar graph of loudness
+  // through that one note — even bars mean a steady blow, jagged ones don't.
+  renderConsistency(attempt) {
+    const svg = this.el.consistencyGraph;
+    const levels = attempt?.levels ?? [];
+
+    if (levels.length < 2) {
+      svg.setAttribute("hidden", "");
+      svg.innerHTML = "";
+      this.el.consistencyEmpty.hidden = false;
+      this.el.consistencyTag.textContent = "—";
+      return;
+    }
+
+    this.el.consistencyEmpty.hidden = true;
+    svg.removeAttribute("hidden");
+
+    const mean = levels.reduce((sum, v) => sum + v, 0) / levels.length;
+    const variance = levels.reduce((sum, v) => sum + (v - mean) ** 2, 0) / levels.length;
+    const stdDev = Math.sqrt(variance);
+    this.el.consistencyTag.textContent = `${consistencyLabel(stdDev)} (±${stdDev.toFixed(1)} dB)`;
+
+    const min = Math.min(...levels);
+    const max = Math.max(...levels);
+    const range = Math.max(max - min, 1);
+
+    svg.innerHTML = "";
+    const barWidth = CONSISTENCY_VIEWBOX_W / levels.length;
+    levels.forEach((level, i) => {
+      const normalized = (level - min) / range;
+      const barHeight = CONSISTENCY_BAR_MIN_H + normalized * (CONSISTENCY_VIEWBOX_H - CONSISTENCY_BAR_MIN_H);
+      const rect = document.createElementNS(SVG_NS, "rect");
+      rect.setAttribute("x", (i * barWidth + CONSISTENCY_BAR_GAP / 2).toFixed(2));
+      rect.setAttribute("y", (CONSISTENCY_VIEWBOX_H - barHeight).toFixed(2));
+      rect.setAttribute("width", Math.max(barWidth - CONSISTENCY_BAR_GAP, 0.5).toFixed(2));
+      rect.setAttribute("height", barHeight.toFixed(2));
+      rect.setAttribute("rx", "1");
+      svg.appendChild(rect);
+    });
   }
 }

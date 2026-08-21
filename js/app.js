@@ -18,6 +18,10 @@ const ARM_WARMUP_MS = 600;
 // Safety net: a note can never "hang" forever even if the room's noise floor
 // somehow never drops below the stop threshold.
 const MAX_NOTE_MS = 30000;
+// How often to sample loudness while a note is playing, for the blow
+// consistency graph. Throttled well below frame rate — a graph doesn't need
+// 60 points/sec, and it keeps the per-attempt storage footprint small.
+const LEVEL_SAMPLE_INTERVAL_MS = 100;
 
 const ui = new UI();
 const sessionManager = new SessionManager();
@@ -31,6 +35,8 @@ let rafHandle = null;
 let wakeLock = null;
 let completeFlashTimeout = null;
 let armedAt = null;
+let currentNoteLevels = [];
+let lastLevelSampleAt = null;
 
 // marginDb = how many dB above the *current* ambient noise floor a sound
 // must reach to count as a note starting. The floor itself is measured
@@ -51,11 +57,14 @@ const detector = new SoundDetector({
   onStart: (now) => {
     clearTimeout(completeFlashTimeout);
     sustainTimer.start(now);
+    currentNoteLevels = [];
+    lastLevelSampleAt = null;
     ui.setState("TIMING");
   },
   onStop: (startedAt, now, durationMs) => {
     sustainTimer.stop(now);
-    sessionManager.addAttempt(durationMs);
+    sessionManager.addAttempt(durationMs, currentNoteLevels);
+    currentNoteLevels = [];
     ui.setTimerMs(durationMs);
     ui.setState("COMPLETE");
     renderStats();
@@ -76,6 +85,7 @@ function renderStats() {
     sessionManager.removeAttempt(id);
     renderStats();
   });
+  ui.renderConsistency(sessionManager.attempts.at(-1) ?? null);
 }
 
 async function acquireWakeLock() {
@@ -129,6 +139,10 @@ function frame() {
     ui.setTimerMs(sustainTimer.elapsedMs(now));
     if (sustainTimer.elapsedMs(now) > MAX_NOTE_MS) {
       detector.forceStop(now);
+    }
+    if (lastLevelSampleAt === null || now - lastLevelSampleAt >= LEVEL_SAMPLE_INTERVAL_MS) {
+      currentNoteLevels.push(Math.round(levelDb));
+      lastLevelSampleAt = now;
     }
   }
 
