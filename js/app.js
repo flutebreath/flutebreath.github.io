@@ -202,6 +202,7 @@ function disarm() {
 
   ui.setArmed(false);
   ui.setState("READY");
+  ui.setTimerMs(0);
   ui.setMeter(-100, floorTracker.floorDb + marginDb, null);
 }
 
