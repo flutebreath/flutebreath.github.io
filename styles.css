@@ -261,6 +261,16 @@ input[type="range"] {
   font-variant-numeric: tabular-nums;
 }
 
+.consistency-title {
+  margin: 0 0 14px;
+  font-size: 0.95rem;
+  font-weight: 700;
+}
+
+.consistency-block + .consistency-block {
+  margin-top: 20px;
+}
+
 .consistency-header {
   display: flex;
   justify-content: space-between;
@@ -296,6 +306,10 @@ input[type="range"] {
 
 .consistency-graph rect {
   fill: var(--accent);
+}
+
+.consistency-graph rect.no-data {
+  fill: var(--panel-border);
 }
 
 .consistency-empty {

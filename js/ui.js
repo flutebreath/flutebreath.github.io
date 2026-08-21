@@ -26,6 +26,23 @@ const CONSISTENCY_VIEWBOX_W = 300;
 const CONSISTENCY_VIEWBOX_H = 60;
 const CONSISTENCY_BAR_MIN_H = 4;
 const CONSISTENCY_BAR_GAP = 1.5;
+// How many recent attempts the trend graph shows — keeps bars legible
+// instead of shrinking to nothing over a long practice history.
+const TREND_WINDOW = 30;
+// Maps stdDev (dB) to a 0-100 score for the trend graph, where higher is
+// steadier. Chosen so the range we've actually observed in testing
+// (~0dB rock-steady to ~10-11dB deliberately wavering) spans roughly 0-100.
+const TREND_SCORE_PER_DB = 8;
+
+function levelsStdDev(levels) {
+  const mean = levels.reduce((sum, v) => sum + v, 0) / levels.length;
+  const variance = levels.reduce((sum, v) => sum + (v - mean) ** 2, 0) / levels.length;
+  return Math.sqrt(variance);
+}
+
+function steadinessScore(stdDev) {
+  return Math.max(0, Math.min(100, Math.round(100 - stdDev * TREND_SCORE_PER_DB)));
+}
 
 // stdDev of raw dB samples within one note — real dB units, so these
 // thresholds are physically meaningful rather than arbitrary percentages.
@@ -58,6 +75,9 @@ export class UI {
       consistencyTag: document.getElementById("consistencyTag"),
       consistencyGraph: document.getElementById("consistencyGraph"),
       consistencyEmpty: document.getElementById("consistencyEmpty"),
+      consistencyTrendTag: document.getElementById("consistencyTrendTag"),
+      consistencyTrendGraph: document.getElementById("consistencyTrendGraph"),
+      consistencyTrendEmpty: document.getElementById("consistencyTrendEmpty"),
     };
   }
 
@@ -171,9 +191,7 @@ export class UI {
     this.el.consistencyEmpty.hidden = true;
     svg.removeAttribute("hidden");
 
-    const mean = levels.reduce((sum, v) => sum + v, 0) / levels.length;
-    const variance = levels.reduce((sum, v) => sum + (v - mean) ** 2, 0) / levels.length;
-    const stdDev = Math.sqrt(variance);
+    const stdDev = levelsStdDev(levels);
     this.el.consistencyTag.textContent = `${consistencyLabel(stdDev)} (±${stdDev.toFixed(1)} dB)`;
 
     const min = Math.min(...levels);
@@ -191,6 +209,48 @@ export class UI {
       rect.setAttribute("width", Math.max(barWidth - CONSISTENCY_BAR_GAP, 0.5).toFixed(2));
       rect.setAttribute("height", barHeight.toFixed(2));
       rect.setAttribute("rx", "1");
+      svg.appendChild(rect);
+    });
+  }
+
+  // attempts: the full session, chronological (oldest first). Shows one bar
+  // per recent attempt so progress reads left-to-right, taller = steadier.
+  // Attempts recorded before this feature existed have no levels data —
+  // those render as short muted bars rather than being mistaken for a bad score.
+  renderConsistencyTrend(attempts) {
+    const svg = this.el.consistencyTrendGraph;
+    const windowed = attempts.slice(-TREND_WINDOW);
+    const scored = windowed.map((a) => (a.levels && a.levels.length >= 2 ? steadinessScore(levelsStdDev(a.levels)) : null));
+
+    if (windowed.length < 2 || scored.every((s) => s === null)) {
+      svg.setAttribute("hidden", "");
+      svg.innerHTML = "";
+      this.el.consistencyTrendEmpty.hidden = false;
+      this.el.consistencyTrendTag.textContent = "—";
+      return;
+    }
+
+    this.el.consistencyTrendEmpty.hidden = true;
+    svg.removeAttribute("hidden");
+
+    const withData = scored.filter((s) => s !== null);
+    const avgScore = Math.round(withData.reduce((sum, s) => sum + s, 0) / withData.length);
+    this.el.consistencyTrendTag.textContent = `Avg ${avgScore}/100`;
+
+    svg.innerHTML = "";
+    const barWidth = CONSISTENCY_VIEWBOX_W / scored.length;
+    scored.forEach((score, i) => {
+      const hasData = score !== null;
+      const barHeight = hasData
+        ? CONSISTENCY_BAR_MIN_H + (score / 100) * (CONSISTENCY_VIEWBOX_H - CONSISTENCY_BAR_MIN_H)
+        : CONSISTENCY_BAR_MIN_H;
+      const rect = document.createElementNS(SVG_NS, "rect");
+      rect.setAttribute("x", (i * barWidth + CONSISTENCY_BAR_GAP / 2).toFixed(2));
+      rect.setAttribute("y", (CONSISTENCY_VIEWBOX_H - barHeight).toFixed(2));
+      rect.setAttribute("width", Math.max(barWidth - CONSISTENCY_BAR_GAP, 0.5).toFixed(2));
+      rect.setAttribute("height", barHeight.toFixed(2));
+      rect.setAttribute("rx", "1");
+      if (!hasData) rect.classList.add("no-data");
       svg.appendChild(rect);
     });
   }

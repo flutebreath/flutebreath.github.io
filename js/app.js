@@ -86,6 +86,7 @@ function renderStats() {
     renderStats();
   });
   ui.renderConsistency(sessionManager.attempts.at(-1) ?? null);
+  ui.renderConsistencyTrend(sessionManager.attempts);
 }
 
 async function acquireWakeLock() {
