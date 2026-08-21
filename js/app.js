@@ -4,6 +4,7 @@ import { SoundDetector, DetectorState } from "./soundDetector.js";
 import { SustainTimer } from "./sustainTimer.js";
 import { SessionManager } from "./sessionManager.js";
 import { NoiseFloorTracker } from "./noiseFloor.js";
+import { BestAudioRecorder } from "./bestAudioRecorder.js";
 import { UI } from "./ui.js";
 
 const STOP_MARGIN_GAP_DB = 6; // stop threshold sits this many dB below the start threshold's margin
@@ -28,6 +29,7 @@ const sessionManager = new SessionManager();
 const sustainTimer = new SustainTimer();
 const audioInput = new AudioInput();
 const floorTracker = new NoiseFloorTracker();
+const bestAudioRecorder = new BestAudioRecorder();
 
 let analyzer = null;
 let armed = false;
@@ -59,6 +61,7 @@ const detector = new SoundDetector({
     sustainTimer.start(now);
     currentNoteLevels = [];
     lastLevelSampleAt = null;
+    bestAudioRecorder.startRecording(audioInput.getStream());
     ui.setState("TIMING");
   },
   onStop: (startedAt, now, durationMs) => {
@@ -68,6 +71,12 @@ const detector = new SoundDetector({
     ui.setTimerMs(durationMs);
     ui.setState("COMPLETE");
     renderStats();
+
+    bestAudioRecorder.stopRecording().then((blob) => {
+      if (bestAudioRecorder.considerAsBest(blob, durationMs)) {
+        ui.setBestAudio(bestAudioRecorder.getDownloadInfo());
+      }
+    });
 
     completeFlashTimeout = setTimeout(() => {
       if (armed) ui.setState("LISTENING");
@@ -188,6 +197,7 @@ function disarm() {
   detector.reset();
   sustainTimer.stop();
   floorTracker.reset();
+  bestAudioRecorder.abort();
   releaseWakeLock();
 
   ui.setArmed(false);
@@ -210,7 +220,36 @@ ui.el.sensitivitySlider.addEventListener("input", (event) => {
 
 ui.el.resetButton.addEventListener("click", () => {
   sessionManager.reset();
+  bestAudioRecorder.clearBest();
+  ui.setBestAudio(null);
   renderStats();
+});
+
+ui.el.recordBestToggle.addEventListener("change", (event) => {
+  if (event.target.checked) {
+    // Revert immediately — only the explicit modal confirmation actually
+    // turns this on, so a stray click never silently starts recording.
+    event.target.checked = false;
+    if (!BestAudioRecorder.isSupported()) {
+      ui.setError("Recording isn't supported in this browser.");
+      return;
+    }
+    ui.showRecordConsentModal();
+  } else {
+    bestAudioRecorder.setEnabled(false);
+    ui.setBestAudio(null);
+  }
+});
+
+ui.el.recordConsentCancel.addEventListener("click", () => {
+  ui.hideRecordConsentModal();
+  ui.setRecordToggleChecked(false);
+});
+
+ui.el.recordConsentConfirm.addEventListener("click", () => {
+  bestAudioRecorder.setEnabled(true);
+  ui.setRecordToggleChecked(true);
+  ui.hideRecordConsentModal();
 });
 
 // Initial paint.

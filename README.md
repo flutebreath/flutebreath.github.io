@@ -91,11 +91,21 @@ for voice calls and tend to suppress or distort a sustained musical tone.
 ## Privacy
 
 All audio processing happens locally in your browser using the Web Audio
-API. **Audio is never uploaded, recorded to disk, or sent to any server** —
-there is no backend at all. Attempt history is saved to your browser's
-`localStorage` (`js/sessionManager.js`) so it survives a page reload, but it
-never leaves your device. Use **Reset session** to clear all of it, or the
-× next to an individual attempt to remove just that one.
+API. **By default, audio is never recorded, uploaded, or sent to any
+server** — there is no backend at all. Attempt history is saved to your
+browser's `localStorage` (`js/sessionManager.js`) so it survives a page
+reload, but it never leaves your device. Use **Reset session** to clear all
+of it, or the × next to an individual attempt to remove just that one.
+
+**Optional exception**: there's an off-by-default toggle, "Save audio of my
+best attempt" (`js/bestAudioRecorder.js`), gated behind an explicit
+confirmation dialog before it does anything. When turned on, it records
+*only* the audio of your current longest attempt — not every note — using
+the `MediaRecorder` API, keeps that one clip in memory for the session
+(never persisted, never uploaded), and replaces it the instant a longer
+attempt beats it. A download link appears once a clip exists. Turning the
+toggle back off, resetting the session, or reloading the page all discard
+whatever clip is currently held.
 
 ## Project structure
 

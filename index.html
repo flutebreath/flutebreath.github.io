@@ -74,7 +74,7 @@
       "name": "Is my microphone audio uploaded or recorded?",
       "acceptedAnswer": {
         "@type": "Answer",
-        "text": "No. All audio processing happens locally in your browser using the Web Audio API. Nothing is ever uploaded, recorded to a file, or sent to a server."
+        "text": "By default, no — all audio processing happens locally in your browser using the Web Audio API, and nothing is ever uploaded or sent to a server. There's one optional, off-by-default toggle that records only your current best attempt's clip locally so you can download it; it's gated behind a confirmation dialog, replaces itself automatically when you beat it, and is never uploaded anywhere."
       }
     },
     {
@@ -114,7 +114,7 @@
         mid-note.
       </p>
       <p class="privacy-note">
-        Microphone audio is processed locally in your browser. It is never uploaded or stored.
+        Microphone audio is processed locally in your browser. By default, it's never uploaded or stored.
       </p>
     </header>
 
@@ -170,6 +170,18 @@
       </div>
     </section>
 
+    <section class="record-panel">
+      <label class="record-toggle">
+        <input type="checkbox" id="recordBestToggle" />
+        <span>Save audio of my best attempt</span>
+      </label>
+      <p class="record-hint">
+        Off by default. When on, only your current best attempt's clip is kept, replaced automatically the moment
+        you beat it, and never uploaded anywhere.
+      </p>
+      <a class="record-download" id="bestAudioDownload" hidden>Download best attempt audio</a>
+    </section>
+
     <section class="consistency-panel">
       <div class="consistency-header">
         <span>Blow consistency (last attempt)</span>
@@ -218,8 +230,10 @@
       <details class="faq-item">
         <summary>Is my microphone audio uploaded or recorded?</summary>
         <p>
-          No. All audio processing happens locally in your browser using the Web Audio API. Nothing is ever
-          uploaded, recorded to a file, or sent to a server.
+          By default, no — all audio processing happens locally in your browser using the Web Audio API, and
+          nothing is ever uploaded or sent to a server. There's one optional, off-by-default toggle that records
+          only your current best attempt's clip locally so you can download it; it's gated behind a confirmation
+          dialog, replaces itself automatically when you beat it, and is never uploaded anywhere.
         </p>
       </details>
 
@@ -258,6 +272,22 @@
       <a href="https://www.instagram.com/kumar.thinks/" target="_blank" rel="noopener noreferrer">@kumar.thinks</a>
     </p>
   </footer>
+
+  <div class="modal-overlay" id="recordConsentOverlay" hidden>
+    <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="recordConsentTitle">
+      <h2 id="recordConsentTitle">⚠️ Recording your audio</h2>
+      <p>
+        Turning this on records your microphone audio locally in your browser while you play. Only your current
+        best attempt's clip is kept — it's automatically replaced the moment you beat it — and it never leaves this
+        device or gets uploaded anywhere.
+      </p>
+      <p>Turning it back off deletes the stored clip immediately.</p>
+      <div class="modal-actions">
+        <button type="button" class="modal-cancel" id="recordConsentCancel">Cancel</button>
+        <button type="button" class="modal-confirm" id="recordConsentConfirm">Yes, enable recording</button>
+      </div>
+    </div>
+  </div>
 
   <script type="module" src="js/app.js"></script>
 </body>

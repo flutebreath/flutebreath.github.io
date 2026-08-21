@@ -31,6 +31,10 @@ export class AudioInput {
     return this.analyser;
   }
 
+  getStream() {
+    return this.stream;
+  }
+
   stop() {
     if (this.stream) {
       this.stream.getTracks().forEach((track) => track.stop());

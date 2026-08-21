@@ -96,6 +96,11 @@ export class UI {
       consistencyTag: document.getElementById("consistencyTag"),
       consistencyGraph: document.getElementById("consistencyGraph"),
       consistencyEmpty: document.getElementById("consistencyEmpty"),
+      recordBestToggle: document.getElementById("recordBestToggle"),
+      bestAudioDownload: document.getElementById("bestAudioDownload"),
+      recordConsentOverlay: document.getElementById("recordConsentOverlay"),
+      recordConsentCancel: document.getElementById("recordConsentCancel"),
+      recordConsentConfirm: document.getElementById("recordConsentConfirm"),
     };
   }
 
@@ -221,5 +226,31 @@ export class UI {
     svg.removeAttribute("hidden");
     const stdDev = levelsStdDev(levels);
     this.el.consistencyTag.textContent = `${consistencyLabel(stdDev)} (±${stdDev.toFixed(1)} dB)`;
+  }
+
+  setRecordToggleChecked(checked) {
+    this.el.recordBestToggle.checked = checked;
+  }
+
+  // info: { url, extension } from BestAudioRecorder.getDownloadInfo(), or null to hide the link.
+  setBestAudio(info) {
+    const link = this.el.bestAudioDownload;
+    if (!info) {
+      link.hidden = true;
+      link.removeAttribute("href");
+      link.removeAttribute("download");
+      return;
+    }
+    link.href = info.url;
+    link.setAttribute("download", `flute-breath-timer-best.${info.extension}`);
+    link.hidden = false;
+  }
+
+  showRecordConsentModal() {
+    this.el.recordConsentOverlay.removeAttribute("hidden");
+  }
+
+  hideRecordConsentModal() {
+    this.el.recordConsentOverlay.setAttribute("hidden", "");
   }
 }
