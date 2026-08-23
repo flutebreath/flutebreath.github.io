@@ -154,6 +154,23 @@ html, body {
   color: var(--danger);
 }
 
+.wakelock-hint {
+  width: 100%;
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: rgba(245, 158, 11, 0.1);
+  border: 1px solid rgba(245, 158, 11, 0.3);
+  color: var(--warn);
+  font-size: 0.75rem;
+  line-height: 1.4;
+  text-align: center;
+}
+
+.wakelock-hint[hidden] {
+  display: none;
+}
+
 .meter-panel, .stats-panel, .history-panel {
   background: var(--panel);
   border: 1px solid var(--panel-border);

@@ -98,14 +98,30 @@ function renderStats() {
 }
 
 async function acquireWakeLock() {
+  if (!("wakeLock" in navigator)) {
+    ui.setWakeLockWarning(true);
+    return;
+  }
   try {
-    if ("wakeLock" in navigator) {
-      wakeLock = await navigator.wakeLock.request("screen");
-    }
+    wakeLock = await navigator.wakeLock.request("screen");
+    ui.setWakeLockWarning(false);
+    wakeLock.addEventListener("release", () => {
+      wakeLock = null;
+      // The OS/browser can revoke this for reasons outside our control
+      // (backgrounding, battery saver, etc.) — silently try to win it back
+      // if we're still supposed to be holding it. If that reacquire attempt
+      // itself fails, the catch block below surfaces the warning.
+      if (armed && document.visibilityState === "visible") {
+        acquireWakeLock();
+      }
+    });
   } catch (err) {
-    // Not fatal — screen may just dim during long practice sessions on
-    // browsers/devices that don't support or allow this.
+    // Not fatal — the app still works, the screen just might sleep on its
+    // own. Surface it so the user can fall back to their device's own
+    // auto-lock setting instead of silently wondering why it locked.
     console.warn("Wake lock unavailable:", err);
+    wakeLock = null;
+    ui.setWakeLockWarning(true);
   }
 }
 
@@ -114,6 +130,7 @@ function releaseWakeLock() {
     wakeLock.release().catch(() => {});
     wakeLock = null;
   }
+  ui.setWakeLockWarning(false);
 }
 
 document.addEventListener("visibilitychange", () => {

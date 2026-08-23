@@ -101,6 +101,7 @@ export class UI {
       recordConsentOverlay: document.getElementById("recordConsentOverlay"),
       recordConsentCancel: document.getElementById("recordConsentCancel"),
       recordConsentConfirm: document.getElementById("recordConsentConfirm"),
+      wakeLockHint: document.getElementById("wakeLockHint"),
     };
   }
 
@@ -132,6 +133,10 @@ export class UI {
   setArmed(armed) {
     this.el.armButton.dataset.armed = String(armed);
     this.el.armButton.textContent = armed ? "Stop Listening" : "Start Listening";
+  }
+
+  setWakeLockWarning(show) {
+    this.el.wakeLockHint.hidden = !show;
   }
 
   setMeter(levelDb, startThresholdDb, floorDb) {
