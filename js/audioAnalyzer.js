@@ -1,8 +1,11 @@
+import { detectPitchHz } from "./pitchDetector.js";
+
 // Turns raw AnalyserNode samples into a single loudness reading (dBFS) per frame.
 export class AudioAnalyzer {
   constructor(analyser) {
     this.analyser = analyser;
     this.buffer = new Float32Array(analyser.fftSize);
+    this.pitchBuffer = new Float32Array(analyser.fftSize);
   }
 
   // Returns the RMS loudness of the current buffer in dBFS.
@@ -19,5 +22,12 @@ export class AudioAnalyzer {
 
     if (rms <= 0.00001) return -100;
     return 20 * Math.log10(rms);
+  }
+
+  // Returns the detected fundamental frequency in Hz, or null if no
+  // confident pitch is present (silence, noise, breath attack transients).
+  readPitchHz(options) {
+    this.analyser.getFloatTimeDomainData(this.pitchBuffer);
+    return detectPitchHz(this.pitchBuffer, this.analyser.context.sampleRate, options);
   }
 }

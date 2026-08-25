@@ -95,6 +95,14 @@
     },
     {
       "@type": "Question",
+      "name": "Can I practice Indian classical swaras (Sa Re Ga Ma Pa Dha Ni) with this app?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Yes. Set your Sa (tonic) from a note dropdown, pick which swara you're practicing, and the app gives live green/yellow/red pitch feedback while you play, plus how many cents sharp or flat you are. It uses standard 12-tone equal temperament, not full microtonal shruti precision."
+      }
+    },
+    {
+      "@type": "Question",
       "name": "Is it free?",
       "acceptedAnswer": {
         "@type": "Answer",
@@ -127,6 +135,12 @@
       <div class="timer-display" id="timerDisplay">00.00</div>
       <div class="timer-unit">seconds</div>
 
+      <div class="pitch-feedback" id="pitchFeedback" hidden>
+        <div class="pitch-target" id="pitchTarget">Target: Sa</div>
+        <div class="pitch-tier-badge" id="pitchTierBadge" data-tier="none">&mdash;</div>
+        <div class="pitch-cents-readout" id="pitchCentsReadout">Play the note to check your pitch</div>
+      </div>
+
       <div class="error-banner" id="errorBanner" hidden></div>
 
       <button class="arm-button" id="armButton" type="button">Start Listening</button>
@@ -158,6 +172,46 @@
           The threshold auto-adjusts above your room's current noise level. Lower = triggers more easily.
         </p>
       </div>
+    </section>
+
+    <section class="swara-panel">
+      <div class="swara-header">
+        <span>Swara practice</span>
+      </div>
+
+      <div class="swara-sa-row">
+        <label for="saSelect">Sa (your tonic)</label>
+        <select id="saSelect">
+          <option value="C">C</option>
+          <option value="C#">C#</option>
+          <option value="D">D</option>
+          <option value="D#">D#</option>
+          <option value="E">E</option>
+          <option value="F">F</option>
+          <option value="F#">F#</option>
+          <option value="G">G</option>
+          <option value="G#">G#</option>
+          <option value="A">A</option>
+          <option value="A#">A#</option>
+          <option value="B">B</option>
+        </select>
+      </div>
+
+      <div class="swara-select-row" id="swaraButtons">
+        <button type="button" class="swara-btn is-active" data-swara="off">Off</button>
+        <button type="button" class="swara-btn" data-swara="0">Sa</button>
+        <button type="button" class="swara-btn" data-swara="2">Re</button>
+        <button type="button" class="swara-btn" data-swara="4">Ga</button>
+        <button type="button" class="swara-btn" data-swara="5">Ma</button>
+        <button type="button" class="swara-btn" data-swara="7">Pa</button>
+        <button type="button" class="swara-btn" data-swara="9">Dha</button>
+        <button type="button" class="swara-btn" data-swara="11">Ni</button>
+      </div>
+
+      <p class="swara-hint">
+        Pick a swara to get live green/yellow/red pitch feedback while you play. Uses standard 12-tone tuning, not
+        microtonal shruti precision.
+      </p>
     </section>
 
     <section class="stats-panel">
@@ -255,6 +309,15 @@
         <p>
           The detection is based on loudness rather than flute tone specifically, so it can time any sustained note
           — though it's built and named around flute breath practice.
+        </p>
+      </details>
+
+      <details class="faq-item">
+        <summary>Can I practice Indian classical swaras (Sa Re Ga Ma Pa Dha Ni) with this app?</summary>
+        <p>
+          Yes. Set your Sa (tonic) from a note dropdown, pick which swara you're practicing, and the app gives live
+          green/yellow/red pitch feedback while you play, plus how many cents sharp or flat you are. It uses
+          standard 12-tone equal temperament, not full microtonal shruti precision.
         </p>
       </details>
 

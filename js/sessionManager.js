@@ -11,7 +11,12 @@ function loadAttempts() {
     if (!Array.isArray(parsed)) return [];
     return parsed
       .filter((a) => a && typeof a.id === "string" && typeof a.durationMs === "number" && typeof a.at === "number")
-      .map((a) => ({ ...a, levels: Array.isArray(a.levels) ? a.levels : [] }));
+      .map((a) => ({
+        ...a,
+        levels: Array.isArray(a.levels) ? a.levels : [],
+        pitchCents: Array.isArray(a.pitchCents) ? a.pitchCents : null,
+        targetSwara: typeof a.targetSwara === "string" ? a.targetSwara : null,
+      }));
   } catch {
     return [];
   }
@@ -36,8 +41,9 @@ export class SessionManager {
   }
 
   // levels: rounded dB samples taken through the note, for the blow-consistency graph.
-  addAttempt(durationMs, levels = []) {
-    const attempt = { id: makeId(), durationMs, at: Date.now(), levels };
+  // pitchCents/targetSwara: only present when swara practice mode was active for this note.
+  addAttempt(durationMs, levels = [], { pitchCents = null, targetSwara = null } = {}) {
+    const attempt = { id: makeId(), durationMs, at: Date.now(), levels, pitchCents, targetSwara };
     this.attempts.push(attempt);
     saveAttempts(this.attempts);
     return attempt;

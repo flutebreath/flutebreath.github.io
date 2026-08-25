@@ -77,6 +77,40 @@ a counter on a `setInterval`. The on-screen timer updates every animation
 frame purely for display; the recorded duration is always the timestamp
 delta.
 
+## Swara practice mode
+
+Beyond just timing a note, the app can tell you whether you're playing the
+right pitch — built for practicing Indian classical swaras (Sa Re Ga Ma Pa
+Dha Ni), though it works for any sustained pitch.
+
+Sa isn't a fixed pitch in Indian classical music — it's whatever tonic the
+performer sets for that session, matched to their voice or instrument. So
+instead of hardcoding a frequency, you pick your Sa's pitch class from a
+12-note dropdown, and every other swara is computed as a ratio from there
+(standard 12-tone equal temperament — the same approximation virtually
+every digital tanpura/riyaz tool uses; it doesn't attempt true microtonal
+shruti precision).
+
+Pick a swara, and while you play, a live badge shows green ("in tune"),
+yellow ("close"), or red ("off pitch"), plus how many cents sharp or flat
+you are — cents are 1/100th of a semitone, so this is fine-grained enough
+to actually guide you toward the right pitch, not just judge it. Once you
+stop, the badge freezes on the note's average accuracy.
+
+Pitch detection (`js/pitchDetector.js`) uses normalized autocorrelation
+over the same microphone buffer already used for volume detection, with an
+important detail: it scans for the *first* sufficiently strong correlation
+peak from short lags upward, not the strongest peak overall — a pure or
+near-pure tone correlates just as well (sometimes better) at exact
+multiples of its true period, and naively taking the global maximum tends
+to lock onto the wrong octave. The swara math itself
+(`js/swaraTheory.js`) is octave-independent for the same reason a player
+naturally cares about pitch *class*, not the exact octave — playing a
+swara an octave up or down from wherever Sa was set still reads as that
+swara, not a different note. This is a genuinely separate detection system
+from the amplitude-based start/stop timer — it never changes what counts
+as a note starting or stopping, it's a purely additive overlay.
+
 ## Microphone permissions
 
 The browser will prompt for microphone access the first time you press
@@ -118,6 +152,9 @@ js/noiseFloor.js      Adaptive ambient noise floor tracker
 js/soundDetector.js   Start/stop state machine (hysteresis + confirmation)
 js/sustainTimer.js    performance.now()-based duration measurement
 js/sessionManager.js  Attempt history, best, average
+js/bestAudioRecorder.js  Opt-in recording of the current best attempt's audio
+js/pitchDetector.js   Autocorrelation-based fundamental frequency detection
+js/swaraTheory.js     Sa/swara → target frequency, cents deviation, accuracy tiers
 js/ui.js              DOM rendering
 js/app.js             Wires the above together, wake lock, event handlers
 ```

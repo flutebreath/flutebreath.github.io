@@ -102,6 +102,12 @@ export class UI {
       recordConsentCancel: document.getElementById("recordConsentCancel"),
       recordConsentConfirm: document.getElementById("recordConsentConfirm"),
       wakeLockHint: document.getElementById("wakeLockHint"),
+      saSelect: document.getElementById("saSelect"),
+      swaraButtons: document.getElementById("swaraButtons"),
+      pitchFeedback: document.getElementById("pitchFeedback"),
+      pitchTarget: document.getElementById("pitchTarget"),
+      pitchTierBadge: document.getElementById("pitchTierBadge"),
+      pitchCentsReadout: document.getElementById("pitchCentsReadout"),
     };
   }
 
@@ -257,5 +263,46 @@ export class UI {
 
   hideRecordConsentModal() {
     this.el.recordConsentOverlay.setAttribute("hidden", "");
+  }
+
+  // swaraKey: "off" or the swara's semitone offset as a string ("0", "2", ...).
+  setSwaraSelection(swaraKey) {
+    this.el.swaraButtons.querySelectorAll(".swara-btn").forEach((btn) => {
+      btn.classList.toggle("is-active", btn.dataset.swara === swaraKey);
+    });
+  }
+
+  setPitchPracticeVisible(visible) {
+    this.el.pitchFeedback.hidden = !visible;
+  }
+
+  setPitchTarget(text) {
+    this.el.pitchTarget.textContent = text;
+  }
+
+  // Shown while armed/listening but no note is currently being measured.
+  resetPitchFeedback() {
+    this.el.pitchTierBadge.dataset.tier = "none";
+    this.el.pitchTierBadge.textContent = "—";
+    this.el.pitchCentsReadout.textContent = "Play the note to check your pitch";
+  }
+
+  // tier: "green" | "yellow" | "red" | "none" (no confident pitch detected).
+  // cents: signed deviation from target, or null when tier is "none".
+  setLivePitch(tier, cents) {
+    const labels = { green: "In tune", yellow: "Close", red: "Off pitch", none: "…" };
+    this.el.pitchTierBadge.dataset.tier = tier;
+    this.el.pitchTierBadge.textContent = labels[tier] ?? "—";
+
+    if (cents == null) {
+      this.el.pitchCentsReadout.textContent = "No clear pitch detected";
+      return;
+    }
+    const rounded = Math.round(cents);
+    if (Math.abs(rounded) < 3) {
+      this.el.pitchCentsReadout.textContent = "Right on pitch";
+    } else {
+      this.el.pitchCentsReadout.textContent = `${Math.abs(rounded)}¢ ${rounded > 0 ? "sharp" : "flat"}`;
+    }
   }
 }

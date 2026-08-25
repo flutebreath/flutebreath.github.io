@@ -5,6 +5,7 @@ import { SustainTimer } from "./sustainTimer.js";
 import { SessionManager } from "./sessionManager.js";
 import { NoiseFloorTracker } from "./noiseFloor.js";
 import { BestAudioRecorder } from "./bestAudioRecorder.js";
+import { SWARAS, targetFrequency, centsOff, accuracyTier } from "./swaraTheory.js";
 import { UI } from "./ui.js";
 
 const STOP_MARGIN_GAP_DB = 6; // stop threshold sits this many dB below the start threshold's margin
@@ -23,6 +24,12 @@ const MAX_NOTE_MS = 30000;
 // consistency graph. Throttled well below frame rate — a graph doesn't need
 // 60 points/sec, and it keeps the per-attempt storage footprint small.
 const LEVEL_SAMPLE_INTERVAL_MS = 100;
+// Same idea for swara pitch sampling, at a slightly livelier rate — a tuner
+// feel benefits from feeling responsive, and pitch detection over the
+// bounded flute-range lag search is cheap enough to afford it.
+const PITCH_SAMPLE_INTERVAL_MS = 80;
+const PITCH_MIN_HZ = 100;
+const PITCH_MAX_HZ = 2000;
 
 const ui = new UI();
 const sessionManager = new SessionManager();
@@ -39,6 +46,15 @@ let completeFlashTimeout = null;
 let armedAt = null;
 let currentNoteLevels = [];
 let lastLevelSampleAt = null;
+
+// Swara practice: null semitones means practice mode is off (plain sustain
+// timer, unchanged behavior). saNote is a pitch class only ("C", "D#", …) —
+// Sa isn't a fixed pitch in Indian classical music, so octave is irrelevant.
+let saNote = "C";
+let practiceSwaraSemitones = null;
+let practiceSwaraName = null;
+let currentNotePitchCents = [];
+let lastPitchSampleAt = null;
 
 // marginDb = how many dB above the *current* ambient noise floor a sound
 // must reach to count as a note starting. The floor itself is measured
@@ -61,13 +77,31 @@ const detector = new SoundDetector({
     sustainTimer.start(now);
     currentNoteLevels = [];
     lastLevelSampleAt = null;
+    currentNotePitchCents = [];
+    lastPitchSampleAt = null;
     bestAudioRecorder.startRecording(audioInput.getStream());
     ui.setState("TIMING");
   },
   onStop: (startedAt, now, durationMs) => {
     sustainTimer.stop(now);
-    sessionManager.addAttempt(durationMs, currentNoteLevels);
+
+    const practiceActive = practiceSwaraSemitones !== null;
+    sessionManager.addAttempt(durationMs, currentNoteLevels, {
+      pitchCents: practiceActive ? currentNotePitchCents : null,
+      targetSwara: practiceActive ? practiceSwaraName : null,
+    });
     currentNoteLevels = [];
+
+    if (practiceActive) {
+      if (currentNotePitchCents.length > 0) {
+        const avgCents = currentNotePitchCents.reduce((sum, c) => sum + c, 0) / currentNotePitchCents.length;
+        ui.setLivePitch(accuracyTier(avgCents), avgCents);
+      } else {
+        ui.setLivePitch("none", null);
+      }
+    }
+    currentNotePitchCents = [];
+
     ui.setTimerMs(durationMs);
     ui.setState("COMPLETE");
     renderStats();
@@ -170,6 +204,20 @@ function frame() {
       currentNoteLevels.push(Math.round(levelDb));
       lastLevelSampleAt = now;
     }
+
+    if (practiceSwaraSemitones !== null) {
+      if (lastPitchSampleAt === null || now - lastPitchSampleAt >= PITCH_SAMPLE_INTERVAL_MS) {
+        lastPitchSampleAt = now;
+        const pitchHz = analyzer.readPitchHz({ minHz: PITCH_MIN_HZ, maxHz: PITCH_MAX_HZ });
+        if (pitchHz) {
+          const cents = centsOff(pitchHz, targetFrequency(saNote, practiceSwaraSemitones));
+          currentNotePitchCents.push(cents);
+          ui.setLivePitch(accuracyTier(cents), cents);
+        } else {
+          ui.setLivePitch("none", null);
+        }
+      }
+    }
   }
 
   rafHandle = requestAnimationFrame(frame);
@@ -215,6 +263,8 @@ function disarm() {
   sustainTimer.stop();
   floorTracker.reset();
   bestAudioRecorder.abort();
+  currentNotePitchCents = [];
+  lastPitchSampleAt = null;
   releaseWakeLock();
 
   ui.setArmed(false);
@@ -240,6 +290,7 @@ ui.el.resetButton.addEventListener("click", () => {
   sessionManager.reset();
   bestAudioRecorder.clearBest();
   ui.setBestAudio(null);
+  if (practiceSwaraSemitones !== null) ui.resetPitchFeedback();
   renderStats();
 });
 
@@ -268,6 +319,41 @@ ui.el.recordConsentConfirm.addEventListener("click", () => {
   bestAudioRecorder.setEnabled(true);
   ui.setRecordToggleChecked(true);
   ui.hideRecordConsentModal();
+});
+
+function updatePitchTargetDisplay() {
+  if (practiceSwaraSemitones === null) return;
+  const hz = targetFrequency(saNote, practiceSwaraSemitones);
+  ui.setPitchTarget(`Target: ${practiceSwaraName} · ${hz.toFixed(1)} Hz`);
+}
+
+ui.el.saSelect.addEventListener("change", (event) => {
+  saNote = event.target.value;
+  updatePitchTargetDisplay();
+  if (practiceSwaraSemitones !== null) ui.resetPitchFeedback();
+});
+
+ui.el.swaraButtons.addEventListener("click", (event) => {
+  const button = event.target.closest(".swara-btn");
+  if (!button) return;
+  const key = button.dataset.swara;
+
+  if (key === "off") {
+    practiceSwaraSemitones = null;
+    practiceSwaraName = null;
+    ui.setSwaraSelection("off");
+    ui.setPitchPracticeVisible(false);
+    return;
+  }
+
+  const swara = SWARAS.find((s) => s.semitones === Number(key));
+  practiceSwaraSemitones = swara.semitones;
+  practiceSwaraName = swara.name;
+  currentNotePitchCents = [];
+  ui.setSwaraSelection(key);
+  ui.setPitchPracticeVisible(true);
+  updatePitchTargetDisplay();
+  ui.resetPitchFeedback();
 });
 
 // Initial paint.

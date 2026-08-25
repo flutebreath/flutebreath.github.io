@@ -171,11 +171,130 @@ html, body {
   display: none;
 }
 
-.meter-panel, .stats-panel, .history-panel {
+.meter-panel, .stats-panel, .history-panel, .swara-panel {
   background: var(--panel);
   border: 1px solid var(--panel-border);
   border-radius: var(--radius);
   padding: 16px;
+}
+
+.pitch-feedback {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 12px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.pitch-feedback[hidden] {
+  display: none;
+}
+
+.pitch-target {
+  font-size: 0.75rem;
+  color: var(--text-dim);
+  letter-spacing: 0.04em;
+}
+
+.pitch-tier-badge {
+  padding: 6px 18px;
+  border-radius: 999px;
+  font-size: 0.95rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  border: 1px solid var(--panel-border);
+  color: var(--text-dim);
+}
+
+.pitch-tier-badge[data-tier="green"] {
+  background: rgba(34, 197, 94, 0.15);
+  border-color: var(--timing);
+  color: var(--timing);
+}
+
+.pitch-tier-badge[data-tier="yellow"] {
+  background: rgba(245, 158, 11, 0.15);
+  border-color: var(--warn);
+  color: var(--warn);
+}
+
+.pitch-tier-badge[data-tier="red"] {
+  background: rgba(239, 68, 68, 0.15);
+  border-color: var(--danger);
+  color: var(--danger);
+}
+
+.pitch-cents-readout {
+  font-size: 0.78rem;
+  color: var(--text-dim);
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+}
+
+.swara-header {
+  font-size: 0.85rem;
+  color: var(--text-dim);
+  margin-bottom: 12px;
+}
+
+.swara-sa-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.swara-sa-row label {
+  font-size: 0.85rem;
+  color: var(--text);
+}
+
+.swara-sa-row select {
+  background: #0e1420;
+  border: 1px solid var(--panel-border);
+  color: var(--text);
+  border-radius: 8px;
+  padding: 8px 10px;
+  font-size: 0.9rem;
+  min-width: 90px;
+}
+
+.swara-select-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+}
+
+.swara-btn {
+  padding: 10px 6px;
+  border-radius: 10px;
+  border: 1px solid var(--panel-border);
+  background: #0e1420;
+  color: var(--text);
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.swara-btn:active {
+  transform: scale(0.97);
+}
+
+.swara-btn.is-active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #06231f;
+}
+
+.swara-hint {
+  margin: 12px 0 0;
+  font-size: 0.72rem;
+  color: var(--text-dim);
+  line-height: 1.5;
 }
 
 .meter-header {
