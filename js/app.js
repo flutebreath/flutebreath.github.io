@@ -6,6 +6,7 @@ import { SessionManager } from "./sessionManager.js";
 import { NoiseFloorTracker } from "./noiseFloor.js";
 import { BestAudioRecorder } from "./bestAudioRecorder.js";
 import { SWARAS, targetFrequency, centsOff, accuracyTier } from "./swaraTheory.js";
+import { PitchHoldTracker } from "./pitchHold.js";
 import { UI } from "./ui.js";
 
 const STOP_MARGIN_GAP_DB = 6; // stop threshold sits this many dB below the start threshold's margin
@@ -37,6 +38,7 @@ const sustainTimer = new SustainTimer();
 const audioInput = new AudioInput();
 const floorTracker = new NoiseFloorTracker();
 const bestAudioRecorder = new BestAudioRecorder();
+const pitchHoldTracker = new PitchHoldTracker();
 
 let analyzer = null;
 let armed = false;
@@ -79,6 +81,7 @@ const detector = new SoundDetector({
     lastLevelSampleAt = null;
     currentNotePitchCents = [];
     lastPitchSampleAt = null;
+    pitchHoldTracker.reset();
     bestAudioRecorder.startRecording(audioInput.getStream());
     ui.setState("TIMING");
   },
@@ -210,10 +213,14 @@ function frame() {
         lastPitchSampleAt = now;
         const pitchHz = analyzer.readPitchHz({ minHz: PITCH_MIN_HZ, maxHz: PITCH_MAX_HZ });
         if (pitchHz) {
+          pitchHoldTracker.markHit(now);
           const cents = centsOff(pitchHz, targetFrequency(saNote, practiceSwaraSemitones));
           currentNotePitchCents.push(cents);
           ui.setLivePitch(accuracyTier(cents), cents);
-        } else {
+        } else if (pitchHoldTracker.shouldShowNoPitch(now)) {
+          // Only actually switch the display once dropouts have persisted
+          // past the hold window — a single missed frame mid-note is
+          // normal and shouldn't visibly flicker the badge.
           ui.setLivePitch("none", null);
         }
       }
@@ -265,6 +272,7 @@ function disarm() {
   bestAudioRecorder.abort();
   currentNotePitchCents = [];
   lastPitchSampleAt = null;
+  pitchHoldTracker.reset();
   releaseWakeLock();
 
   ui.setArmed(false);
