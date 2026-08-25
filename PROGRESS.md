@@ -83,6 +83,17 @@ taking the first sufficiently strong peak from short lags upward instead.
 Verified against synthetic sine/harmonic waveforms and a full mocked-audio
 run through the real app before shipping.
 
+**Pitch display smoothing** (`js/pitchHold.js`) — the live swara badge had
+no debouncing, so isolated dropouts (breath noise, natural
+micro-fluctuations — reported by the user on a real bansuri) flickered it
+between a reading and "no pitch detected" throughout an otherwise solid
+note. Holds the last confident reading for a 300ms grace period before
+actually switching, same asymmetric-hysteresis idea as start/stop
+detection. Verified with a mocked source that swaps tone/white-noise at
+matching loudness (isolating pitch-display behavior from amplitude
+detection): a 150ms dropout now holds with zero flicker, a 500ms one still
+correctly resolves to "no pitch."
+
 ## Known limitations (already stated to the user, worth remembering)
 
 - Swara tuning is standard 12-tone equal temperament, **not** microtonal
@@ -112,7 +123,11 @@ run through the real app before shipping.
   the app's reference/detection is very likely fine and the Ma reading is
   either genuine beginner variance or an instrument characteristic, not a
   software bug. Don't change tolerance thresholds or detection logic based
-  on this single data point without that comparison.
+  on this single data point without that comparison. (A separate, related
+  bug — the live badge flickering between a reading and "no pitch" — was
+  found and fixed in the meantime; that's a display-stability fix, not an
+  answer to whether the 77¢ reading itself was accurate. Still waiting on
+  the Sa comparison.)
 
 ## Roadmap (discussed but not built)
 
