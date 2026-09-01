@@ -161,6 +161,27 @@ normally; the existing full-pass auto-loop (900ms flash, then reset with
 aggregate stats preserved) still fires correctly and isn't affected by
 the new check.
 
+**Identify mode** — user asked whether the app could just tell them which
+note they played, without picking a swara/sequence to practice against
+first. Previously pitch detection only ran once a target was selected;
+now the plain sustain-timer state (the default — nothing picked) also
+runs pitch detection, and instead of scoring against a fixed target it
+finds whichever of the seven swaras (relative to the current Sa) the
+detected pitch is closest to (`identifySwara()` in `js/swaraTheory.js`)
+and names it, live while playing and frozen on the note's average when it
+stops — same green/yellow/red tiering and cents readout as swara practice,
+reused rather than duplicated. Sits in its own panel (`#identifyFeedback`)
+that's mutually exclusive with the existing pitch-practice and
+sequence-practice panels, shown by default and whenever the user backs out
+to "Off"/exits a sequence.
+
+Verified end-to-end with mocked audio: identify panel visible by default
+before anything is selected; playing an exact Ga (E4 against Sa=C) reads
+"Ga · Right on pitch" both live and frozen, green; playing a pitch ~37
+cents sharp of Re reads "Re · 37¢ sharp", yellow, both live and frozen;
+selecting a swara hides the identify panel and shows the normal
+pitch-target panel, and switching back to "Off" restores it.
+
 ## Known limitations (already stated to the user, worth remembering)
 
 - Swara tuning is standard 12-tone equal temperament, **not** microtonal

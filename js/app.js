@@ -5,7 +5,7 @@ import { SustainTimer } from "./sustainTimer.js";
 import { SessionManager } from "./sessionManager.js";
 import { NoiseFloorTracker } from "./noiseFloor.js";
 import { BestAudioRecorder } from "./bestAudioRecorder.js";
-import { SWARAS, targetFrequency, centsOff, accuracyTier } from "./swaraTheory.js";
+import { SWARAS, targetFrequency, centsOff, accuracyTier, identifySwara } from "./swaraTheory.js";
 import { PitchHoldTracker } from "./pitchHold.js";
 import { SequenceLibrary } from "./sequenceLibrary.js";
 import { UI } from "./ui.js";
@@ -69,6 +69,10 @@ let practiceSwaraSemitones = null;
 let practiceSwaraName = null;
 let currentNotePitchCents = [];
 let lastPitchSampleAt = null;
+// Raw detected Hz samples for the current note, used only in "identify"
+// mode (no swara/sequence target picked) to name whichever note was
+// closest, rather than scoring against a fixed target.
+let currentNoteHzSamples = [];
 
 // Sequence (sargam phrase) practice. activeSequence set means it takes
 // priority over single-swara practice — the two are mutually exclusive.
@@ -169,6 +173,7 @@ const detector = new SoundDetector({
     currentNoteLevels = [];
     lastLevelSampleAt = null;
     currentNotePitchCents = [];
+    currentNoteHzSamples = [];
     lastPitchSampleAt = null;
     pitchHoldTracker.reset();
     lastSequenceNoteEndAt = null; // they've resumed — stop the breath-timeout clock
@@ -229,8 +234,20 @@ const detector = new SoundDetector({
       } else {
         ui.setLivePitch(tier, avgCents);
       }
+    } else {
+      // No target picked — identify which swara this note was closest to
+      // instead of scoring it against anything.
+      const hasPitch = currentNoteHzSamples.length > 0;
+      if (hasPitch) {
+        const avgHz = currentNoteHzSamples.reduce((sum, hz) => sum + hz, 0) / currentNoteHzSamples.length;
+        const { swara, cents } = identifySwara(avgHz, saNote);
+        ui.setIdentifiedNote(swara.name, accuracyTier(cents), cents);
+      } else {
+        ui.setIdentifiedNote(null, null, null);
+      }
     }
     currentNotePitchCents = [];
+    currentNoteHzSamples = [];
 
     ui.setTimerMs(durationMs);
     ui.setState("COMPLETE");
@@ -335,23 +352,34 @@ function frame() {
       lastLevelSampleAt = now;
     }
 
-    if (isPracticeActive()) {
-      if (lastPitchSampleAt === null || now - lastPitchSampleAt >= PITCH_SAMPLE_INTERVAL_MS) {
-        lastPitchSampleAt = now;
-        const pitchHz = analyzer.readPitchHz({ minHz: PITCH_MIN_HZ, maxHz: PITCH_MAX_HZ });
-        if (pitchHz) {
-          pitchHoldTracker.markHit(now);
+    // Pitch sampling always runs while a note is playing, whether or not a
+    // target's been picked — with no target it drives "identify" mode
+    // (name whichever swara the note was closest to) instead of scoring.
+    if (lastPitchSampleAt === null || now - lastPitchSampleAt >= PITCH_SAMPLE_INTERVAL_MS) {
+      lastPitchSampleAt = now;
+      const pitchHz = analyzer.readPitchHz({ minHz: PITCH_MIN_HZ, maxHz: PITCH_MAX_HZ });
+      if (pitchHz) {
+        pitchHoldTracker.markHit(now);
+        if (isPracticeActive()) {
           const cents = centsOff(pitchHz, targetFrequency(saNote, currentTargetSemitones()));
           currentNotePitchCents.push(cents);
           const tier = accuracyTier(cents);
           if (activeSequence) ui.setSequenceLiveTier(sequencePosition, tier);
           else ui.setLivePitch(tier, cents);
-        } else if (pitchHoldTracker.shouldShowNoPitch(now)) {
-          // Only actually switch the display once dropouts have persisted
-          // past the hold window — a single missed frame mid-note is
-          // normal and shouldn't visibly flicker the badge.
+        } else {
+          currentNoteHzSamples.push(pitchHz);
+          const { swara, cents } = identifySwara(pitchHz, saNote);
+          ui.setIdentifiedNote(swara.name, accuracyTier(cents), cents);
+        }
+      } else if (pitchHoldTracker.shouldShowNoPitch(now)) {
+        // Only actually switch the display once dropouts have persisted
+        // past the hold window — a single missed frame mid-note is
+        // normal and shouldn't visibly flicker the badge.
+        if (isPracticeActive()) {
           if (activeSequence) ui.setSequenceLiveTier(sequencePosition, "none");
           else ui.setLivePitch("none", null);
+        } else {
+          ui.setIdentifiedNote(null, null, null);
         }
       }
     }
@@ -417,6 +445,7 @@ function disarm() {
   floorTracker.reset();
   bestAudioRecorder.abort();
   currentNotePitchCents = [];
+  currentNoteHzSamples = [];
   lastPitchSampleAt = null;
   pitchHoldTracker.reset();
   releaseWakeLock();
@@ -489,6 +518,8 @@ ui.el.saSelect.addEventListener("change", (event) => {
   saNote = event.target.value;
   updatePitchTargetDisplay();
   if (practiceSwaraSemitones !== null) ui.resetPitchFeedback();
+  ui.setIdentifySaLabel(saNote);
+  if (!isPracticeActive()) ui.resetIdentifyFeedback();
 });
 
 ui.el.swaraButtons.addEventListener("click", (event) => {
@@ -501,6 +532,10 @@ ui.el.swaraButtons.addEventListener("click", (event) => {
     practiceSwaraName = null;
     ui.setSwaraSelection("off");
     ui.setPitchPracticeVisible(false);
+    if (!activeSequence) {
+      ui.setIdentifyPracticeVisible(true);
+      ui.resetIdentifyFeedback();
+    }
     return;
   }
 
@@ -510,6 +545,7 @@ ui.el.swaraButtons.addEventListener("click", (event) => {
   currentNotePitchCents = [];
   ui.setSwaraSelection(key);
   ui.setPitchPracticeVisible(true);
+  ui.setIdentifyPracticeVisible(false);
   updatePitchTargetDisplay();
   ui.resetPitchFeedback();
 });
@@ -574,6 +610,7 @@ function startSequencePractice(id) {
   ui.setSwaraSelection("off");
   ui.setPitchPracticeVisible(false);
   ui.setSwaraPanelVisible(false);
+  ui.setIdentifyPracticeVisible(false);
 
   activeSequence = sequence;
   resetSequenceProgress();
@@ -592,6 +629,8 @@ function exitSequencePractice() {
   sequenceAggregate = [];
   ui.setSequencePracticeVisible(false);
   ui.setSwaraPanelVisible(true);
+  ui.setIdentifyPracticeVisible(true);
+  ui.resetIdentifyFeedback();
 }
 
 ui.el.sequenceExitBtn.addEventListener("click", () => {
@@ -608,6 +647,9 @@ ui.el.tabBar.addEventListener("click", (event) => {
 ui.setActiveTab("practice");
 ui.setSwaraPanelVisible(true);
 ui.setSequencePracticeVisible(false);
+ui.setIdentifyPracticeVisible(true);
+ui.setIdentifySaLabel(saNote);
+ui.resetIdentifyFeedback();
 ui.setThresholdLabel(marginDb, floorTracker.floorDb + marginDb);
 ui.setState("READY");
 ui.setArmed(false);

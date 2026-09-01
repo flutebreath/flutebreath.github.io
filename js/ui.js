@@ -113,6 +113,10 @@ export class UI {
       pitchTarget: document.getElementById("pitchTarget"),
       pitchTierBadge: document.getElementById("pitchTierBadge"),
       pitchCentsReadout: document.getElementById("pitchCentsReadout"),
+      identifyFeedback: document.getElementById("identifyFeedback"),
+      identifySaLabel: document.getElementById("identifySaLabel"),
+      identifyNoteBadge: document.getElementById("identifyNoteBadge"),
+      identifyCentsReadout: document.getElementById("identifyCentsReadout"),
       tabBar: document.getElementById("tabBar"),
       swaraPanel: document.getElementById("swaraPanel"),
       sequencePractice: document.getElementById("sequencePractice"),
@@ -332,6 +336,42 @@ export class UI {
       this.el.pitchCentsReadout.textContent = "Right on pitch";
     } else {
       this.el.pitchCentsReadout.textContent = `${Math.abs(rounded)}¢ ${rounded > 0 ? "sharp" : "flat"}`;
+    }
+  }
+
+  setIdentifyPracticeVisible(visible) {
+    this.el.identifyFeedback.hidden = !visible;
+  }
+
+  setIdentifySaLabel(text) {
+    this.el.identifySaLabel.textContent = text;
+  }
+
+  resetIdentifyFeedback() {
+    this.el.identifyNoteBadge.dataset.tier = "none";
+    this.el.identifyNoteBadge.textContent = "—";
+    this.el.identifyCentsReadout.textContent = "Play a note to see which swara it is";
+  }
+
+  // name: identified swara name, or null when no confident pitch is
+  // detected. tier: how close the pitch sits to that identified swara (not
+  // pass/fail against a fixed target — there's no "wrong" note here, this
+  // just reflects how centered the identification is). cents: signed
+  // deviation from the identified swara, or null.
+  setIdentifiedNote(name, tier, cents) {
+    if (name == null) {
+      this.el.identifyNoteBadge.dataset.tier = "none";
+      this.el.identifyNoteBadge.textContent = "…";
+      this.el.identifyCentsReadout.textContent = "No clear pitch detected";
+      return;
+    }
+    this.el.identifyNoteBadge.dataset.tier = tier;
+    this.el.identifyNoteBadge.textContent = name;
+    const rounded = Math.round(cents);
+    if (Math.abs(rounded) < 3) {
+      this.el.identifyCentsReadout.textContent = "Right on pitch";
+    } else {
+      this.el.identifyCentsReadout.textContent = `${Math.abs(rounded)}¢ ${rounded > 0 ? "sharp" : "flat"}`;
     }
   }
 

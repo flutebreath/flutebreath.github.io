@@ -53,6 +53,21 @@ export function centsOff(detectedHz, targetHz) {
   return wrapped;
 }
 
+// Finds which of the seven swaras (relative to the given Sa) a detected
+// pitch is closest to — for "what note did I just play" identification when
+// there's no pre-chosen target, as opposed to centsOff/accuracyTier which
+// score a single already-known target.
+export function identifySwara(detectedHz, saNoteName) {
+  let best = null;
+  for (const swara of SWARAS) {
+    const cents = centsOff(detectedHz, targetFrequency(saNoteName, swara.semitones));
+    if (best === null || Math.abs(cents) < Math.abs(best.cents)) {
+      best = { swara, cents };
+    }
+  }
+  return best;
+}
+
 // Tolerance bands, in cents. ±15 is a typical "in tune" window for a
 // practice tool (stricter tuners use less, but mic/pitch-detection noise
 // makes that impractical here); beyond ±40 reads as a clearly different pitch.

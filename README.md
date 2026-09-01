@@ -97,6 +97,14 @@ you are — cents are 1/100th of a semitone, so this is fine-grained enough
 to actually guide you toward the right pitch, not just judge it. Once you
 stop, the badge freezes on the note's average accuracy.
 
+If you haven't picked a swara (or a sequence), the app runs in "identify"
+mode instead — the default state. Play any note and it names whichever
+swara (relative to your selected Sa) it was closest to, plus how many
+cents sharp or flat, live while you play and frozen once you stop. No
+target to compare against, so there's no right/wrong here, just
+recognition — useful for checking your ear against the app, or seeing
+what you actually played without committing to practicing one note first.
+
 Pitch detection (`js/pitchDetector.js`) uses normalized autocorrelation
 over the same microphone buffer already used for volume detection, with an
 important detail: it scans for the *first* sufficiently strong correlation
