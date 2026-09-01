@@ -26,10 +26,67 @@ html, body {
 .app {
   max-width: 480px;
   margin: 0 auto;
-  padding: 20px 16px calc(40px + env(safe-area-inset-bottom));
+  padding: 20px 16px calc(24px + env(safe-area-inset-bottom));
   display: flex;
   flex-direction: column;
   gap: 18px;
+}
+
+.tab-content {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.tab-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.tab-panel[hidden] {
+  display: none;
+}
+
+.tab-bar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 40;
+  display: flex;
+  max-width: 480px;
+  margin: 0 auto;
+  padding: 8px 12px calc(8px + env(safe-area-inset-bottom));
+  gap: 8px;
+  background: rgba(11, 15, 20, 0.92);
+  backdrop-filter: blur(10px);
+  border-top: 1px solid var(--panel-border);
+}
+
+.tab-btn {
+  flex: 1;
+  padding: 10px 4px;
+  border-radius: 10px;
+  border: none;
+  background: none;
+  color: var(--text-dim);
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.tab-btn.is-active {
+  background: rgba(79, 209, 197, 0.12);
+  color: var(--accent);
+}
+
+.tab-btn:active {
+  transform: scale(0.97);
+}
+
+body {
+  padding-bottom: calc(64px + env(safe-area-inset-bottom));
 }
 
 .app-header h1 {
@@ -294,6 +351,272 @@ html, body {
   margin: 12px 0 0;
   font-size: 0.72rem;
   color: var(--text-dim);
+  line-height: 1.5;
+}
+
+/* --- Sequence builder (Sequences tab) --- */
+
+.sequence-builder-panel,
+.sequence-library-panel {
+  background: var(--panel);
+  border: 1px solid var(--panel-border);
+  border-radius: var(--radius);
+  padding: 16px;
+}
+
+.builder-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  min-height: 40px;
+  align-items: center;
+  margin-bottom: 14px;
+}
+
+.builder-empty {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--text-dim);
+}
+
+.builder-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px 6px 14px;
+  border-radius: 999px;
+  background: rgba(79, 209, 197, 0.12);
+  border: 1px solid var(--accent-dim);
+  color: var(--accent);
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.builder-chip-remove {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text);
+  font-size: 0.75rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.builder-actions {
+  display: flex;
+  gap: 10px;
+  margin: 14px 0;
+}
+
+.builder-secondary {
+  flex: 1;
+  padding: 10px;
+  border-radius: 10px;
+  border: 1px solid var(--panel-border);
+  background: none;
+  color: var(--text);
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.builder-secondary:active {
+  transform: scale(0.97);
+}
+
+.builder-name-input {
+  width: 100%;
+  padding: 12px 14px;
+  border-radius: 10px;
+  border: 1px solid var(--panel-border);
+  background: #0e1420;
+  color: var(--text);
+  font-size: 0.9rem;
+  margin-bottom: 12px;
+}
+
+.builder-name-input::placeholder {
+  color: var(--text-dim);
+}
+
+.builder-save {
+  width: 100%;
+  min-height: 52px;
+  border-radius: 12px;
+  border: none;
+  background: var(--accent);
+  color: #06231f;
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.builder-save:active {
+  transform: scale(0.98);
+}
+
+.builder-save:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.sequence-library-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.sequence-library-empty {
+  color: var(--text-dim);
+  font-size: 0.85rem;
+  text-align: center;
+  padding: 8px 0;
+}
+
+.sequence-library-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  background: #0e1420;
+}
+
+.sequence-library-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.sequence-library-name {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sequence-library-notes {
+  font-size: 0.75rem;
+  color: var(--text-dim);
+  margin-top: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sequence-library-practice {
+  flex-shrink: 0;
+  padding: 8px 14px;
+  border-radius: 8px;
+  border: none;
+  background: var(--accent);
+  color: #06231f;
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.sequence-library-delete {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 1px solid var(--panel-border);
+  background: none;
+  color: var(--text-dim);
+  font-size: 1rem;
+  cursor: pointer;
+}
+
+/* --- Sequence practice (Practice tab, live) --- */
+
+.sequence-practice {
+  width: 100%;
+  padding: 14px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.sequence-practice[hidden] {
+  display: none;
+}
+
+.sequence-practice-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+  font-size: 0.85rem;
+  color: var(--text-dim);
+}
+
+.sequence-exit {
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--panel-border);
+  background: none;
+  color: var(--text-dim);
+  font-size: 0.72rem;
+  cursor: pointer;
+}
+
+.sequence-row {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+}
+
+.sequence-chip {
+  padding: 8px 14px;
+  border-radius: 10px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  border: 2px solid var(--panel-border);
+  color: var(--text-dim);
+  background: #0e1420;
+}
+
+.sequence-chip[data-tier="green"] {
+  border-color: var(--timing);
+  color: var(--timing);
+  background: rgba(34, 197, 94, 0.12);
+}
+
+.sequence-chip[data-tier="yellow"] {
+  border-color: var(--warn);
+  color: var(--warn);
+  background: rgba(245, 158, 11, 0.12);
+}
+
+.sequence-chip[data-tier="red"] {
+  border-color: var(--danger);
+  color: var(--danger);
+  background: rgba(239, 68, 68, 0.12);
+}
+
+.sequence-chip.is-current {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.sequence-summary {
+  margin: 12px 0 0;
+  font-size: 0.78rem;
+  color: var(--text-dim);
+  text-align: center;
   line-height: 1.5;
 }
 

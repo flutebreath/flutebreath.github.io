@@ -103,6 +103,14 @@
     },
     {
       "@type": "Question",
+      "name": "Can I practice a sequence of swaras (a sargam phrase), not just one note at a time?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Yes. Build a phrase like Ma Ga Re Ga on the Sequences tab, save it, and practice it — each note you play is automatically checked against the next note in the phrase, with live per-note feedback and a summary showing which note in the phrase needs the most work."
+      }
+    },
+    {
+      "@type": "Question",
       "name": "Is it free?",
       "acceptedAnswer": {
         "@type": "Answer",
@@ -126,145 +134,195 @@
       </p>
     </header>
 
-    <section class="state-panel">
-      <div class="state-badge" id="stateBadge" data-state="READY">
-        <span class="state-dot"></span>
-        <span class="state-label" id="stateLabel">READY</span>
-      </div>
+    <div class="tab-content">
+      <section class="tab-panel" data-tab-panel="practice">
+        <section class="state-panel">
+          <div class="state-badge" id="stateBadge" data-state="READY">
+            <span class="state-dot"></span>
+            <span class="state-label" id="stateLabel">READY</span>
+          </div>
 
-      <div class="timer-display" id="timerDisplay">00.00</div>
-      <div class="timer-unit">seconds</div>
+          <div class="timer-display" id="timerDisplay">00.00</div>
+          <div class="timer-unit">seconds</div>
 
-      <div class="pitch-feedback" id="pitchFeedback" hidden>
-        <div class="pitch-target" id="pitchTarget">Target: Sa</div>
-        <div class="pitch-tier-badge" id="pitchTierBadge" data-tier="none">&mdash;</div>
-        <div class="pitch-cents-readout" id="pitchCentsReadout">Play the note to check your pitch</div>
-      </div>
+          <div class="pitch-feedback" id="pitchFeedback" hidden>
+            <div class="pitch-target" id="pitchTarget">Target: Sa</div>
+            <div class="pitch-tier-badge" id="pitchTierBadge" data-tier="none">&mdash;</div>
+            <div class="pitch-cents-readout" id="pitchCentsReadout">Play the note to check your pitch</div>
+          </div>
 
-      <div class="error-banner" id="errorBanner" hidden></div>
+          <div class="sequence-practice" id="sequencePractice" hidden>
+            <div class="sequence-practice-header">
+              <span id="sequencePracticeName">Sequence</span>
+              <button type="button" class="sequence-exit" id="sequenceExitBtn">Exit</button>
+            </div>
+            <div class="sequence-row" id="sequenceRow"></div>
+            <p class="sequence-summary" id="sequenceSummary"></p>
+          </div>
 
-      <button class="arm-button" id="armButton" type="button">Start Listening</button>
+          <div class="error-banner" id="errorBanner" hidden></div>
 
-      <p class="wakelock-hint" id="wakeLockHint" hidden>
-        This device/browser won't keep the screen on automatically during a session — you may want to turn off
-        Auto-Lock in your device's display settings before a long practice.
-      </p>
-    </section>
+          <button class="arm-button" id="armButton" type="button">Start Listening</button>
 
-    <section class="meter-panel">
-      <div class="meter-header">
-        <span>Microphone level</span>
-        <span id="meterDbLabel">&minus;100 dB</span>
-      </div>
-      <div class="meter-track">
-        <div class="meter-fill" id="meterFill"></div>
-        <div class="meter-threshold" id="meterThreshold"></div>
-      </div>
+          <p class="wakelock-hint" id="wakeLockHint" hidden>
+            This device/browser won't keep the screen on automatically during a session — you may want to turn off
+            Auto-Lock in your device's display settings before a long practice.
+          </p>
+        </section>
 
-      <div class="sensitivity-row">
-        <label for="sensitivitySlider">
-          Sensitivity
-          <span id="thresholdValueLabel">&minus;46 dB</span>
-          <span class="sensitivity-tag" id="sensitivityTag">Medium</span>
-        </label>
-        <input type="range" id="sensitivitySlider" min="8" max="26" step="1" value="14" />
-        <p class="sensitivity-hint">
-          The threshold auto-adjusts above your room's current noise level. Lower = triggers more easily.
-        </p>
-      </div>
-    </section>
+        <section class="meter-panel">
+          <div class="meter-header">
+            <span>Microphone level</span>
+            <span id="meterDbLabel">&minus;100 dB</span>
+          </div>
+          <div class="meter-track">
+            <div class="meter-fill" id="meterFill"></div>
+            <div class="meter-threshold" id="meterThreshold"></div>
+          </div>
 
-    <section class="swara-panel">
-      <div class="swara-header">
-        <span>Swara practice</span>
-      </div>
+          <div class="sensitivity-row">
+            <label for="sensitivitySlider">
+              Sensitivity
+              <span id="thresholdValueLabel">&minus;46 dB</span>
+              <span class="sensitivity-tag" id="sensitivityTag">Medium</span>
+            </label>
+            <input type="range" id="sensitivitySlider" min="8" max="26" step="1" value="14" />
+            <p class="sensitivity-hint">
+              The threshold auto-adjusts above your room's current noise level. Lower = triggers more easily.
+            </p>
+          </div>
+        </section>
 
-      <div class="swara-sa-row">
-        <label for="saSelect">Sa (your tonic)</label>
-        <select id="saSelect">
-          <option value="C">C</option>
-          <option value="C#">C#</option>
-          <option value="D">D</option>
-          <option value="D#">D#</option>
-          <option value="E">E</option>
-          <option value="F">F</option>
-          <option value="F#">F#</option>
-          <option value="G">G</option>
-          <option value="G#">G#</option>
-          <option value="A">A</option>
-          <option value="A#">A#</option>
-          <option value="B">B</option>
-        </select>
-      </div>
+        <section class="swara-panel" id="swaraPanel">
+          <div class="swara-header">
+            <span>Swara practice</span>
+          </div>
 
-      <div class="swara-select-row" id="swaraButtons">
-        <button type="button" class="swara-btn is-active" data-swara="off">Off</button>
-        <button type="button" class="swara-btn" data-swara="0">Sa</button>
-        <button type="button" class="swara-btn" data-swara="2">Re</button>
-        <button type="button" class="swara-btn" data-swara="4">Ga</button>
-        <button type="button" class="swara-btn" data-swara="5">Ma</button>
-        <button type="button" class="swara-btn" data-swara="7">Pa</button>
-        <button type="button" class="swara-btn" data-swara="9">Dha</button>
-        <button type="button" class="swara-btn" data-swara="11">Ni</button>
-      </div>
+          <div class="swara-sa-row">
+            <label for="saSelect">Sa (your tonic)</label>
+            <select id="saSelect">
+              <option value="C">C</option>
+              <option value="C#">C#</option>
+              <option value="D">D</option>
+              <option value="D#">D#</option>
+              <option value="E">E</option>
+              <option value="F">F</option>
+              <option value="F#">F#</option>
+              <option value="G">G</option>
+              <option value="G#">G#</option>
+              <option value="A">A</option>
+              <option value="A#">A#</option>
+              <option value="B">B</option>
+            </select>
+          </div>
 
-      <p class="swara-hint">
-        Pick a swara to get live green/yellow/red pitch feedback while you play. Uses standard 12-tone tuning, not
-        microtonal shruti precision.
-      </p>
-    </section>
+          <div class="swara-select-row" id="swaraButtons">
+            <button type="button" class="swara-btn is-active" data-swara="off">Off</button>
+            <button type="button" class="swara-btn" data-swara="0">Sa</button>
+            <button type="button" class="swara-btn" data-swara="2">Re</button>
+            <button type="button" class="swara-btn" data-swara="4">Ga</button>
+            <button type="button" class="swara-btn" data-swara="5">Ma</button>
+            <button type="button" class="swara-btn" data-swara="7">Pa</button>
+            <button type="button" class="swara-btn" data-swara="9">Dha</button>
+            <button type="button" class="swara-btn" data-swara="11">Ni</button>
+          </div>
 
-    <section class="stats-panel">
-      <div class="stat">
-        <div class="stat-label">Last</div>
-        <div class="stat-value" id="lastStat">&mdash;</div>
-      </div>
-      <div class="stat">
-        <div class="stat-label">Best</div>
-        <div class="stat-value" id="bestStat">&mdash;</div>
-      </div>
-      <div class="stat">
-        <div class="stat-label">Average</div>
-        <div class="stat-value" id="avgStat">&mdash;</div>
-      </div>
-    </section>
+          <p class="swara-hint">
+            Pick a swara to get live green/yellow/red pitch feedback while you play, or practice a full phrase from
+            the Sequences tab. Uses standard 12-tone tuning, not microtonal shruti precision.
+          </p>
+        </section>
+      </section>
 
-    <section class="record-panel">
-      <label class="record-toggle">
-        <input type="checkbox" id="recordBestToggle" />
-        <span>Save audio of my best attempt</span>
-      </label>
-      <p class="record-hint">
-        Off by default. When on, only your current best attempt's clip is kept, replaced automatically the moment
-        you beat it, and never uploaded anywhere.
-      </p>
-      <a class="record-download" id="bestAudioDownload" hidden>Download best attempt audio</a>
-    </section>
+      <section class="tab-panel" data-tab-panel="sequences" hidden>
+        <section class="sequence-builder-panel">
+          <div class="swara-header">
+            <span>Build a sequence</span>
+          </div>
+          <div class="builder-row" id="builderRow">
+            <p class="builder-empty" id="builderEmpty">Tap swaras below to build a phrase.</p>
+          </div>
+          <div class="swara-select-row" id="builderButtons">
+            <button type="button" class="swara-btn" data-swara="0">Sa</button>
+            <button type="button" class="swara-btn" data-swara="2">Re</button>
+            <button type="button" class="swara-btn" data-swara="4">Ga</button>
+            <button type="button" class="swara-btn" data-swara="5">Ma</button>
+            <button type="button" class="swara-btn" data-swara="7">Pa</button>
+            <button type="button" class="swara-btn" data-swara="9">Dha</button>
+            <button type="button" class="swara-btn" data-swara="11">Ni</button>
+          </div>
+          <div class="builder-actions">
+            <button type="button" class="builder-secondary" id="builderUndoBtn">Undo last</button>
+            <button type="button" class="builder-secondary" id="builderClearBtn">Clear</button>
+          </div>
+          <input type="text" class="builder-name-input" id="sequenceNameInput" placeholder="Name (optional)" />
+          <button type="button" class="builder-save" id="saveSequenceBtn">Save sequence</button>
+        </section>
 
-    <section class="consistency-panel">
-      <div class="consistency-header">
-        <span>Blow consistency (last attempt)</span>
-        <span class="consistency-tag" id="consistencyTag">&mdash;</span>
-      </div>
-      <div class="consistency-graph-wrap">
-        <p class="consistency-empty" id="consistencyEmpty">Play a note to see your blow consistency here.</p>
-        <svg class="consistency-graph" id="consistencyGraph" viewBox="0 0 300 60" preserveAspectRatio="none" hidden></svg>
-      </div>
-      <p class="consistency-hint">
-        Even bars mean a steady blow; tall spikes and dips mean your volume is wavering. Each attempt in the history
-        below shows its own shape too.
-      </p>
-    </section>
+        <section class="sequence-library-panel">
+          <div class="swara-header">
+            <span>Your sequences</span>
+          </div>
+          <ul class="sequence-library-list" id="sequenceLibraryList">
+            <li class="sequence-library-empty">No saved sequences yet</li>
+          </ul>
+        </section>
+      </section>
 
-    <section class="history-panel">
-      <div class="history-header">
-        <span>Attempt history</span>
-        <button class="reset-button" id="resetButton" type="button">Reset session</button>
-      </div>
-      <ol class="history-list" id="historyList">
-        <li class="history-empty">No attempts yet</li>
-      </ol>
-    </section>
+      <section class="tab-panel" data-tab-panel="history" hidden>
+        <section class="stats-panel">
+          <div class="stat">
+            <div class="stat-label">Last</div>
+            <div class="stat-value" id="lastStat">&mdash;</div>
+          </div>
+          <div class="stat">
+            <div class="stat-label">Best</div>
+            <div class="stat-value" id="bestStat">&mdash;</div>
+          </div>
+          <div class="stat">
+            <div class="stat-label">Average</div>
+            <div class="stat-value" id="avgStat">&mdash;</div>
+          </div>
+        </section>
+
+        <section class="record-panel">
+          <label class="record-toggle">
+            <input type="checkbox" id="recordBestToggle" />
+            <span>Save audio of my best attempt</span>
+          </label>
+          <p class="record-hint">
+            Off by default. When on, only your current best attempt's clip is kept, replaced automatically the
+            moment you beat it, and never uploaded anywhere.
+          </p>
+          <a class="record-download" id="bestAudioDownload" hidden>Download best attempt audio</a>
+        </section>
+
+        <section class="consistency-panel">
+          <div class="consistency-header">
+            <span>Blow consistency (last attempt)</span>
+            <span class="consistency-tag" id="consistencyTag">&mdash;</span>
+          </div>
+          <div class="consistency-graph-wrap">
+            <p class="consistency-empty" id="consistencyEmpty">Play a note to see your blow consistency here.</p>
+            <svg class="consistency-graph" id="consistencyGraph" viewBox="0 0 300 60" preserveAspectRatio="none" hidden></svg>
+          </div>
+          <p class="consistency-hint">
+            Even bars mean a steady blow; tall spikes and dips mean your volume is wavering. Each attempt in the
+            history below shows its own shape too.
+          </p>
+        </section>
+
+        <section class="history-panel">
+          <div class="history-header">
+            <span>Attempt history</span>
+            <button class="reset-button" id="resetButton" type="button">Reset session</button>
+          </div>
+          <ol class="history-list" id="historyList">
+            <li class="history-empty">No attempts yet</li>
+          </ol>
+        </section>
+      </section>
+    </div>
 
     <section class="faq-panel" aria-labelledby="faqHeading">
       <h2 id="faqHeading">Frequently asked questions</h2>
@@ -322,6 +380,15 @@
       </details>
 
       <details class="faq-item">
+        <summary>Can I practice a sequence of swaras (a sargam phrase), not just one note at a time?</summary>
+        <p>
+          Yes. Build a phrase like Ma Ga Re Ga on the Sequences tab, save it, and practice it — each note you play
+          is automatically checked against the next note in the phrase, with live per-note feedback and a summary
+          showing which note in the phrase needs the most work.
+        </p>
+      </details>
+
+      <details class="faq-item">
         <summary>Is it free?</summary>
         <p>Yes, completely free, with no ads, no account, and no in-app purchases.</p>
       </details>
@@ -340,6 +407,12 @@
       <a href="https://www.instagram.com/kumar.thinks/" target="_blank" rel="noopener noreferrer">@kumar.thinks</a>
     </p>
   </footer>
+
+  <nav class="tab-bar" id="tabBar" aria-label="Main">
+    <button type="button" class="tab-btn is-active" data-tab="practice">Practice</button>
+    <button type="button" class="tab-btn" data-tab="sequences">Sequences</button>
+    <button type="button" class="tab-btn" data-tab="history">History</button>
+  </nav>
 
   <div class="modal-overlay" id="recordConsentOverlay" hidden>
     <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="recordConsentTitle">

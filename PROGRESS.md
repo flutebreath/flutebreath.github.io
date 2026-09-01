@@ -94,6 +94,32 @@ matching loudness (isolating pitch-display behavior from amplitude
 detection): a 150ms dropout now holds with zero flicker, a 500ms one still
 correctly resolves to "no pitch."
 
+**Tabs + sargam sequence practice** — restructured the single scrolling
+page into three tabs (Practice / Sequences / History) since it had gotten
+cluttered; FAQ/footer stay outside the tabs, always visible, partly for
+simplicity and partly so they stay crawlable regardless of tab state. Then
+added `js/sequenceLibrary.js`: build and save a phrase (e.g. Ma Ga Re Ga)
+on the Sequences tab, tap "Practice" to jump straight to Practice with it
+loaded. Reuses the existing amplitude start/stop detection as the
+note-advance signal — no new detection mechanism needed, each completed
+note just gets checked against whichever swara is next in the phrase.
+Auto-loops back to the start after a full pass (user's choice, over
+stopping and waiting). A chip row shows live per-note color as you play,
+and an aggregate summary across every rep this session calls out whichever
+note has been off pitch most often — the actual value of practicing a
+phrase over isolated notes. Single-swara and sequence practice are
+mutually exclusive (one active target at a time); switching to a sequence
+hides the single-swara picker and vice versa via Exit.
+
+Verified end-to-end: builder chip add/remove/undo/clear, save with
+auto-generated vs custom name, a full mocked-audio pass through a 2-note
+sequence (first note exactly on target → green, second note 500 cents off
+→ red), confirmed the row correctly reset on the auto-loop while the
+*aggregate* correctly survived it, a second rep correctly accumulated
+into the same aggregate ("1 of 2 times" not resetting to "1 of 1"), Exit
+correctly restoring the single-swara panel, and the History tab still
+rendering stats/consistency/attempts correctly after the move.
+
 ## Known limitations (already stated to the user, worth remembering)
 
 - Swara tuning is standard 12-tone equal temperament, **not** microtonal
@@ -136,14 +162,18 @@ correctly resolves to "no pitch."
 - Daily/weekly progress tracking across sessions (personal best trend,
   7-day average) on top of the persisted attempt list already in place.
 - Microphone selection when multiple inputs are available.
-- Practice modes beyond plain sustain (breath phrasing, repeated notes,
-  challenge mode with a target duration).
+- Practice modes beyond sustain/swara/sequence (breath phrasing, challenge
+  mode with a target duration) — "repeated notes" is now covered by
+  sequence practice.
 - PWA install support (manifest + service worker) for a more native feel.
-- Persisting Sa/swara selection across reloads (currently resets each
-  page load — minor, mentioned once, not requested since).
+- Persisting Sa/swara/active-sequence selection across reloads (currently
+  all reset each page load, consistent with each other — minor, not
+  requested since it was first mentioned).
 - Surfacing per-attempt pitch accuracy in the Attempt History list itself
   (the data is already stored per attempt — `pitchCents`/`targetSwara` on
   each attempt object — just not rendered there yet), mirroring how blow
   consistency got its own history-row treatment.
 - Pitch-gated start/stop detection (currently amplitude-only) — would let
   the swara mode also ignore a loud wrong note, not just flag it as red.
+- Sequence library: no rename/reorder-in-place yet (delete + rebuild only);
+  no per-rep history (aggregate only, doesn't show individual past reps).

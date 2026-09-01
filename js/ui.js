@@ -1,4 +1,9 @@
 import { formatDuration } from "./sustainTimer.js";
+import { SWARAS } from "./swaraTheory.js";
+
+function swaraNameFor(semitones) {
+  return SWARAS.find((s) => s.semitones === semitones)?.name ?? "?";
+}
 
 const METER_MIN_DB = -70;
 const METER_MAX_DB = -10;
@@ -108,7 +113,31 @@ export class UI {
       pitchTarget: document.getElementById("pitchTarget"),
       pitchTierBadge: document.getElementById("pitchTierBadge"),
       pitchCentsReadout: document.getElementById("pitchCentsReadout"),
+      tabBar: document.getElementById("tabBar"),
+      swaraPanel: document.getElementById("swaraPanel"),
+      sequencePractice: document.getElementById("sequencePractice"),
+      sequencePracticeName: document.getElementById("sequencePracticeName"),
+      sequenceExitBtn: document.getElementById("sequenceExitBtn"),
+      sequenceRow: document.getElementById("sequenceRow"),
+      sequenceSummary: document.getElementById("sequenceSummary"),
+      builderRow: document.getElementById("builderRow"),
+      builderEmpty: document.getElementById("builderEmpty"),
+      builderButtons: document.getElementById("builderButtons"),
+      builderUndoBtn: document.getElementById("builderUndoBtn"),
+      builderClearBtn: document.getElementById("builderClearBtn"),
+      sequenceNameInput: document.getElementById("sequenceNameInput"),
+      saveSequenceBtn: document.getElementById("saveSequenceBtn"),
+      sequenceLibraryList: document.getElementById("sequenceLibraryList"),
     };
+  }
+
+  setActiveTab(tabName) {
+    document.querySelectorAll(".tab-panel").forEach((panel) => {
+      panel.hidden = panel.dataset.tabPanel !== tabName;
+    });
+    document.querySelectorAll(".tab-btn").forEach((btn) => {
+      btn.classList.toggle("is-active", btn.dataset.tab === tabName);
+    });
   }
 
   setState(state) {
@@ -304,5 +333,134 @@ export class UI {
     } else {
       this.el.pitchCentsReadout.textContent = `${Math.abs(rounded)}¢ ${rounded > 0 ? "sharp" : "flat"}`;
     }
+  }
+
+  setSwaraPanelVisible(visible) {
+    this.el.swaraPanel.hidden = !visible;
+  }
+
+  setSequencePracticeVisible(visible) {
+    this.el.sequencePractice.hidden = !visible;
+  }
+
+  setSequencePracticeName(text) {
+    this.el.sequencePracticeName.textContent = text;
+  }
+
+  // swaraSemitones: the sequence's notes. repResults: array same length,
+  // each entry a tier string or null (not played yet this rep).
+  // currentPosition: index of the note currently up next/being played.
+  renderSequenceRow(swaraSemitones, repResults, currentPosition) {
+    const row = this.el.sequenceRow;
+    row.innerHTML = "";
+    swaraSemitones.forEach((semitones, i) => {
+      const chip = document.createElement("span");
+      chip.className = "sequence-chip";
+      chip.textContent = swaraNameFor(semitones);
+      if (repResults[i]) chip.dataset.tier = repResults[i];
+      if (i === currentPosition) chip.classList.add("is-current");
+      row.appendChild(chip);
+    });
+  }
+
+  // Live-updates just the current position's chip color while a note is
+  // still being played, without touching the rest of the row.
+  setSequenceLiveTier(position, tier) {
+    const chip = this.el.sequenceRow.children[position];
+    if (!chip) return;
+    if (tier === "none") delete chip.dataset.tier;
+    else chip.dataset.tier = tier;
+  }
+
+  setSequenceSummary(text) {
+    this.el.sequenceSummary.textContent = text;
+  }
+
+  // semitonesInProgress: the phrase currently being built, in order.
+  renderBuilder(semitonesInProgress, onRemove) {
+    const row = this.el.builderRow;
+    row.innerHTML = "";
+
+    if (semitonesInProgress.length === 0) {
+      const empty = document.createElement("p");
+      empty.className = "builder-empty";
+      empty.id = "builderEmpty";
+      empty.textContent = "Tap swaras below to build a phrase.";
+      row.appendChild(empty);
+      this.el.saveSequenceBtn.disabled = true;
+      return;
+    }
+
+    this.el.saveSequenceBtn.disabled = false;
+    semitonesInProgress.forEach((semitones, i) => {
+      const chip = document.createElement("span");
+      chip.className = "builder-chip";
+      const label = document.createElement("span");
+      label.textContent = swaraNameFor(semitones);
+      const removeBtn = document.createElement("button");
+      removeBtn.type = "button";
+      removeBtn.className = "builder-chip-remove";
+      removeBtn.setAttribute("aria-label", `Remove ${swaraNameFor(semitones)} at position ${i + 1}`);
+      removeBtn.textContent = "×";
+      removeBtn.addEventListener("click", () => onRemove(i));
+      chip.appendChild(label);
+      chip.appendChild(removeBtn);
+      row.appendChild(chip);
+    });
+  }
+
+  clearSequenceNameInput() {
+    this.el.sequenceNameInput.value = "";
+  }
+
+  // sequences: saved list. onPractice/onDelete: (id) => void.
+  renderSequenceLibrary(sequences, onPractice, onDelete) {
+    const list = this.el.sequenceLibraryList;
+    list.innerHTML = "";
+
+    if (sequences.length === 0) {
+      const li = document.createElement("li");
+      li.className = "sequence-library-empty";
+      li.textContent = "No saved sequences yet";
+      list.appendChild(li);
+      return;
+    }
+
+    sequences
+      .slice()
+      .reverse()
+      .forEach((seq) => {
+        const li = document.createElement("li");
+        li.className = "sequence-library-item";
+
+        const info = document.createElement("div");
+        info.className = "sequence-library-info";
+        const name = document.createElement("div");
+        name.className = "sequence-library-name";
+        name.textContent = seq.name;
+        const notes = document.createElement("div");
+        notes.className = "sequence-library-notes";
+        notes.textContent = seq.swaraSemitones.map(swaraNameFor).join(" → ");
+        info.appendChild(name);
+        info.appendChild(notes);
+
+        const practiceBtn = document.createElement("button");
+        practiceBtn.type = "button";
+        practiceBtn.className = "sequence-library-practice";
+        practiceBtn.textContent = "Practice";
+        practiceBtn.addEventListener("click", () => onPractice(seq.id));
+
+        const deleteBtn = document.createElement("button");
+        deleteBtn.type = "button";
+        deleteBtn.className = "sequence-library-delete";
+        deleteBtn.setAttribute("aria-label", `Delete sequence ${seq.name}`);
+        deleteBtn.textContent = "×";
+        deleteBtn.addEventListener("click", () => onDelete(seq.id));
+
+        li.appendChild(info);
+        li.appendChild(practiceBtn);
+        li.appendChild(deleteBtn);
+        list.appendChild(li);
+      });
   }
 }

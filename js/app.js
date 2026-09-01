@@ -7,6 +7,7 @@ import { NoiseFloorTracker } from "./noiseFloor.js";
 import { BestAudioRecorder } from "./bestAudioRecorder.js";
 import { SWARAS, targetFrequency, centsOff, accuracyTier } from "./swaraTheory.js";
 import { PitchHoldTracker } from "./pitchHold.js";
+import { SequenceLibrary } from "./sequenceLibrary.js";
 import { UI } from "./ui.js";
 
 const STOP_MARGIN_GAP_DB = 6; // stop threshold sits this many dB below the start threshold's margin
@@ -39,6 +40,7 @@ const audioInput = new AudioInput();
 const floorTracker = new NoiseFloorTracker();
 const bestAudioRecorder = new BestAudioRecorder();
 const pitchHoldTracker = new PitchHoldTracker();
+const sequenceLibrary = new SequenceLibrary();
 
 let analyzer = null;
 let armed = false;
@@ -57,6 +59,63 @@ let practiceSwaraSemitones = null;
 let practiceSwaraName = null;
 let currentNotePitchCents = [];
 let lastPitchSampleAt = null;
+
+// Sequence (sargam phrase) practice. activeSequence set means it takes
+// priority over single-swara practice — the two are mutually exclusive.
+let activeSequence = null;
+let sequencePosition = 0;
+let sequenceRepResults = []; // per-position tier string or null, current rep
+let sequenceAggregate = []; // per-position {green,yellow,red,none} counts, this armed session
+
+// Sequences tab: the phrase currently being assembled before saving.
+let builderSemitones = [];
+
+// The semitone offset the player is expected to hit right now, whichever
+// practice mode (if any) is active.
+function currentTargetSemitones() {
+  if (activeSequence) return activeSequence.swaraSemitones[sequencePosition];
+  return practiceSwaraSemitones;
+}
+
+function isPracticeActive() {
+  return activeSequence !== null || practiceSwaraSemitones !== null;
+}
+
+function resetSequenceProgress() {
+  if (!activeSequence) return;
+  sequencePosition = 0;
+  sequenceRepResults = new Array(activeSequence.swaraSemitones.length).fill(null);
+  sequenceAggregate = activeSequence.swaraSemitones.map(() => ({ green: 0, yellow: 0, red: 0, none: 0 }));
+}
+
+function renderSequenceUI() {
+  if (!activeSequence) return;
+  ui.renderSequenceRow(activeSequence.swaraSemitones, sequenceRepResults, sequencePosition);
+  ui.setSequenceSummary(sequenceSummaryText());
+}
+
+function sequenceSummaryText() {
+  if (!activeSequence) return "";
+  let worstIndex = -1;
+  let worstMisses = -1;
+  let worstTotal = 0;
+  sequenceAggregate.forEach((counts, i) => {
+    const total = counts.green + counts.yellow + counts.red + counts.none;
+    if (total === 0) return;
+    const misses = total - counts.green;
+    if (misses > worstMisses) {
+      worstMisses = misses;
+      worstIndex = i;
+      worstTotal = total;
+    }
+  });
+  if (worstIndex === -1) return "Play through the phrase to see where to focus.";
+  if (worstMisses === 0) return "Every note has landed in tune so far — nice.";
+  const name = activeSequence.swaraSemitones
+    .map((s) => SWARAS.find((sw) => sw.semitones === s)?.name)
+    .filter((_, i) => i === worstIndex)[0];
+  return `Focus on "${name}" — off pitch ${worstMisses} of ${worstTotal} times so far.`;
+}
 
 // marginDb = how many dB above the *current* ambient noise floor a sound
 // must reach to count as a note starting. The floor itself is measured
@@ -88,19 +147,35 @@ const detector = new SoundDetector({
   onStop: (startedAt, now, durationMs) => {
     sustainTimer.stop(now);
 
-    const practiceActive = practiceSwaraSemitones !== null;
+    const practiceActive = isPracticeActive();
+    const targetSemitones = currentTargetSemitones();
+    const targetName = SWARAS.find((s) => s.semitones === targetSemitones)?.name ?? null;
     sessionManager.addAttempt(durationMs, currentNoteLevels, {
       pitchCents: practiceActive ? currentNotePitchCents : null,
-      targetSwara: practiceActive ? practiceSwaraName : null,
+      targetSwara: practiceActive ? targetName : null,
     });
     currentNoteLevels = [];
 
     if (practiceActive) {
-      if (currentNotePitchCents.length > 0) {
-        const avgCents = currentNotePitchCents.reduce((sum, c) => sum + c, 0) / currentNotePitchCents.length;
-        ui.setLivePitch(accuracyTier(avgCents), avgCents);
+      const hasPitch = currentNotePitchCents.length > 0;
+      const avgCents = hasPitch
+        ? currentNotePitchCents.reduce((sum, c) => sum + c, 0) / currentNotePitchCents.length
+        : null;
+      const tier = hasPitch ? accuracyTier(avgCents) : "none";
+
+      if (activeSequence) {
+        sequenceRepResults[sequencePosition] = tier;
+        sequenceAggregate[sequencePosition][tier] += 1;
+        sequencePosition += 1;
+        if (sequencePosition >= activeSequence.swaraSemitones.length) {
+          // Full pass through the phrase — loop back to the start so the
+          // player can keep repeating it without touching the screen.
+          sequencePosition = 0;
+          sequenceRepResults = new Array(activeSequence.swaraSemitones.length).fill(null);
+        }
+        renderSequenceUI();
       } else {
-        ui.setLivePitch("none", null);
+        ui.setLivePitch(tier, avgCents);
       }
     }
     currentNotePitchCents = [];
@@ -208,20 +283,23 @@ function frame() {
       lastLevelSampleAt = now;
     }
 
-    if (practiceSwaraSemitones !== null) {
+    if (isPracticeActive()) {
       if (lastPitchSampleAt === null || now - lastPitchSampleAt >= PITCH_SAMPLE_INTERVAL_MS) {
         lastPitchSampleAt = now;
         const pitchHz = analyzer.readPitchHz({ minHz: PITCH_MIN_HZ, maxHz: PITCH_MAX_HZ });
         if (pitchHz) {
           pitchHoldTracker.markHit(now);
-          const cents = centsOff(pitchHz, targetFrequency(saNote, practiceSwaraSemitones));
+          const cents = centsOff(pitchHz, targetFrequency(saNote, currentTargetSemitones()));
           currentNotePitchCents.push(cents);
-          ui.setLivePitch(accuracyTier(cents), cents);
+          const tier = accuracyTier(cents);
+          if (activeSequence) ui.setSequenceLiveTier(sequencePosition, tier);
+          else ui.setLivePitch(tier, cents);
         } else if (pitchHoldTracker.shouldShowNoPitch(now)) {
           // Only actually switch the display once dropouts have persisted
           // past the hold window — a single missed frame mid-note is
           // normal and shouldn't visibly flicker the badge.
-          ui.setLivePitch("none", null);
+          if (activeSequence) ui.setSequenceLiveTier(sequencePosition, "none");
+          else ui.setLivePitch("none", null);
         }
       }
     }
@@ -299,6 +377,10 @@ ui.el.resetButton.addEventListener("click", () => {
   bestAudioRecorder.clearBest();
   ui.setBestAudio(null);
   if (practiceSwaraSemitones !== null) ui.resetPitchFeedback();
+  if (activeSequence) {
+    resetSequenceProgress();
+    renderSequenceUI();
+  }
   renderStats();
 });
 
@@ -364,12 +446,106 @@ ui.el.swaraButtons.addEventListener("click", (event) => {
   ui.resetPitchFeedback();
 });
 
+// --- Sequences tab: builder ---
+
+function renderBuilder() {
+  ui.renderBuilder(builderSemitones, (index) => {
+    builderSemitones.splice(index, 1);
+    renderBuilder();
+  });
+}
+
+ui.el.builderButtons.addEventListener("click", (event) => {
+  const button = event.target.closest(".swara-btn");
+  if (!button) return;
+  builderSemitones.push(Number(button.dataset.swara));
+  renderBuilder();
+});
+
+ui.el.builderUndoBtn.addEventListener("click", () => {
+  builderSemitones.pop();
+  renderBuilder();
+});
+
+ui.el.builderClearBtn.addEventListener("click", () => {
+  builderSemitones = [];
+  renderBuilder();
+});
+
+ui.el.saveSequenceBtn.addEventListener("click", () => {
+  if (builderSemitones.length === 0) return;
+  const typedName = ui.el.sequenceNameInput.value.trim();
+  const defaultName = builderSemitones.map((s) => SWARAS.find((sw) => sw.semitones === s)?.name).join(" ");
+  sequenceLibrary.add(typedName || defaultName, builderSemitones);
+  builderSemitones = [];
+  renderBuilder();
+  ui.clearSequenceNameInput();
+  renderSequenceLibrary();
+});
+
+// --- Sequences tab: saved library ---
+
+function renderSequenceLibrary() {
+  ui.renderSequenceLibrary(
+    sequenceLibrary.sequences,
+    (id) => startSequencePractice(id),
+    (id) => {
+      sequenceLibrary.remove(id);
+      if (activeSequence?.id === id) exitSequencePractice();
+      renderSequenceLibrary();
+    }
+  );
+}
+
+function startSequencePractice(id) {
+  const sequence = sequenceLibrary.sequences.find((s) => s.id === id);
+  if (!sequence) return;
+
+  practiceSwaraSemitones = null;
+  practiceSwaraName = null;
+  ui.setSwaraSelection("off");
+  ui.setPitchPracticeVisible(false);
+  ui.setSwaraPanelVisible(false);
+
+  activeSequence = sequence;
+  resetSequenceProgress();
+  ui.setSequencePracticeName(sequence.name);
+  ui.setSequencePracticeVisible(true);
+  renderSequenceUI();
+
+  ui.setActiveTab("practice");
+}
+
+function exitSequencePractice() {
+  activeSequence = null;
+  sequencePosition = 0;
+  sequenceRepResults = [];
+  sequenceAggregate = [];
+  ui.setSequencePracticeVisible(false);
+  ui.setSwaraPanelVisible(true);
+}
+
+ui.el.sequenceExitBtn.addEventListener("click", () => {
+  exitSequencePractice();
+});
+
+ui.el.tabBar.addEventListener("click", (event) => {
+  const button = event.target.closest(".tab-btn");
+  if (!button) return;
+  ui.setActiveTab(button.dataset.tab);
+});
+
 // Initial paint.
+ui.setActiveTab("practice");
+ui.setSwaraPanelVisible(true);
+ui.setSequencePracticeVisible(false);
 ui.setThresholdLabel(marginDb, floorTracker.floorDb + marginDb);
 ui.setState("READY");
 ui.setArmed(false);
 ui.setMeter(-100, floorTracker.floorDb + marginDb, null);
 renderStats();
+renderBuilder();
+renderSequenceLibrary();
 
 if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
   ui.setError("This browser doesn't support microphone access (getUserMedia).");

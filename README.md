@@ -111,6 +111,44 @@ swara, not a different note. This is a genuinely separate detection system
 from the amplitude-based start/stop timer — it never changes what counts
 as a note starting or stopping, it's a purely additive overlay.
 
+## Sequence (sargam) practice
+
+Beyond one note at a time, you can build and save a phrase — e.g. Ma Ga Re
+Ga — on the **Sequences** tab and practice it as a whole. Tap swaras in
+order to build it, name it (or leave it blank for an auto-generated name
+like "Ma Ga Re Ga"), and save. Saved sequences show a note preview and a
+**Practice** button that jumps straight to the **Practice** tab with that
+phrase loaded.
+
+While practicing a sequence, each note you play is automatically checked
+against whichever note comes next in the phrase — no tapping between
+notes, same as everything else in this app. A row of chips shows the whole
+phrase, coloring in green/yellow/red as you complete each note and
+highlighting whichever one is up next. After the last note, it loops back
+to the start automatically so you can keep repeating the phrase. A summary
+line tracks accuracy across every rep played this session and calls out
+whichever note has been off pitch most often — the actual point of
+practicing a phrase instead of isolated notes: knowing *which* note in it
+needs the work.
+
+Saved sequences persist in `localStorage` (`js/sequenceLibrary.js`), same
+as attempt history — nothing uploaded, no account.
+
+## Tabs
+
+The app is split into three tabs to keep things from turning into one long
+scrolling page as features were added:
+
+- **Practice** — the timer, live pitch feedback (single swara or a loaded
+  sequence), meter, and sensitivity control. Where you actually play.
+- **Sequences** — build and manage saved sargam phrases.
+- **History** — stats, blow consistency, attempt history, and the
+  best-attempt recording toggle.
+
+The FAQ and footer stay outside the tabs, always visible beneath whichever
+one is open, partly for simplicity and partly so search engines can still
+crawl the FAQ content regardless of tab state.
+
 ## Microphone permissions
 
 The browser will prompt for microphone access the first time you press
@@ -155,6 +193,8 @@ js/sessionManager.js  Attempt history, best, average
 js/bestAudioRecorder.js  Opt-in recording of the current best attempt's audio
 js/pitchDetector.js   Autocorrelation-based fundamental frequency detection
 js/swaraTheory.js     Sa/swara → target frequency, cents deviation, accuracy tiers
+js/pitchHold.js       Smooths the live pitch display against brief detection dropouts
+js/sequenceLibrary.js Saved sargam phrases (build/save/delete), localStorage-backed
 js/ui.js              DOM rendering
 js/app.js             Wires the above together, wake lock, event handlers
 ```
@@ -196,9 +236,9 @@ reliable before adding more:
 - Daily/weekly progress tracking on top of the persisted attempt list
   already in place (e.g. "personal best," "7-day average," a trend graph)
 - Microphone selection when multiple inputs are available
-- Frequency-based detection (FFT tonal/pitch analysis) to reduce false
-  triggers further, on top of the current amplitude-only detection
-- Practice modes (breath phrasing, repeated notes, challenge mode with a
-  target duration)
+- Pitch-gated start/stop detection — pitch detection exists now (swara
+  practice) but doesn't yet influence when a note is considered to have
+  started or stopped, which is still amplitude-only
+- Challenge mode with a target duration; breath-phrasing practice
 - PWA install support (manifest + home screen icon) for a more native feel
   on iPhone
