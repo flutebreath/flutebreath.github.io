@@ -138,6 +138,29 @@ timing: a pass shows literal "✓" in the accent/green color and advances
 immediately; a fail shows literal "✗" in red, persists through the full
 900ms flash window (checked at t=0 and t=300ms), then resets.
 
+**Sequence practice: reset on stopping to breathe, not just wrong notes** —
+follow-up to the above. A wrong note already reset the phrase, but pausing
+too long *between* two correctly-played notes (stopping to take a breath
+mid-phrase) previously just left the phrase frozen at that position
+indefinitely instead of also counting as giving up on the rep. Added a
+3000ms breath-timeout clock (`SEQUENCE_BREATH_TIMEOUT_MS`) that starts the
+instant a note passes and the phrase isn't yet complete, and stops the
+moment the next note starts; if it ever elapses, the rep resets to the
+first note exactly like a wrong note would, via the same
+`resetSequenceRep()`/`renderSequenceUI()` path. 3s is deliberately generous
+so normal tonguing/breath gaps between notes in a phrase never trip it.
+Guarded against double-firing alongside the existing pass/fail/full-pass
+flash-then-reset (`sequenceResetTimeout === null`), and against firing
+before any note has been played yet (`sequencePosition > 0`).
+
+Verified end-to-end with mocked audio on a 2-note (Sa → Re) sequence:
+playing Sa correctly advances to Re as before; a 3.5s idle pause after
+that (no note played) auto-resets back to Sa; a 1.2s pause (well under
+the 3s timeout) does *not* reset, and playing Re afterward still passes
+normally; the existing full-pass auto-loop (900ms flash, then reset with
+aggregate stats preserved) still fires correctly and isn't affected by
+the new check.
+
 ## Known limitations (already stated to the user, worth remembering)
 
 - Swara tuning is standard 12-tone equal temperament, **not** microtonal

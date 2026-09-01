@@ -122,14 +122,18 @@ phrase loaded.
 
 While practicing a sequence, each note you play is automatically checked
 against whichever note comes next in the phrase — no tapping between
-notes, same as everything else in this app. A row of chips shows the whole
-phrase, coloring in green/yellow/red as you complete each note and
-highlighting whichever one is up next. After the last note, it loops back
-to the start automatically so you can keep repeating the phrase. A summary
-line tracks accuracy across every rep played this session and calls out
-whichever note has been off pitch most often — the actual point of
-practicing a phrase instead of isolated notes: knowing *which* note in it
-needs the work.
+notes, same as everything else in this app. The phrase has to be played
+correctly in order, in one go: each note is marked ✓ (in tune, or close —
+green/yellow) or ✗ (red, or no clear pitch) as you go, and a wrong note
+resets the whole phrase back to the first note rather than skipping past
+it. Stopping to take a breath mid-phrase — pausing more than 3 seconds
+between two correctly-played notes — resets it too, the same as a wrong
+note would; shorter, normal gaps between notes are fine. A full correct
+pass loops back to the start automatically so you can keep repeating the
+phrase. A summary line tracks accuracy across every rep played this
+session and calls out whichever note has been off pitch most often — the
+actual point of practicing a phrase instead of isolated notes: knowing
+*which* note in it needs the work.
 
 Saved sequences persist in `localStorage` (`js/sequenceLibrary.js`), same
 as attempt history — nothing uploaded, no account.

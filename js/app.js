@@ -18,6 +18,12 @@ const COMPLETE_FLASH_MS = 900;
 // advancing is instant (no flash needed) or, on a wrong note / a full
 // completed pass, resetting back to the start of the phrase.
 const SEQUENCE_RESET_FLASH_MS = 900;
+// How long a pause between notes mid-phrase is tolerated before it counts
+// as having stopped rather than just the normal breath/tonguing gap between
+// notes — past this, the phrase restarts from the first note. Generous
+// enough to not fire on a quick natural gap; a real "I stopped to breathe"
+// pause is normally several seconds on a wind instrument.
+const SEQUENCE_BREATH_TIMEOUT_MS = 3000;
 // Mic streams often produce a brief loud pop/click as the hardware settles
 // right after getUserMedia connects, and picking the device up to position
 // it near the flute adds handling noise. Show the level meter immediately
@@ -74,6 +80,12 @@ let sequencePosition = 0;
 let sequenceRepResults = []; // per-position final tier string or null, current rep
 let sequenceAggregate = []; // per-position {green,yellow,red,none} counts, this armed session
 let sequenceResetTimeout = null;
+// When the most recent note in the phrase finished, so a long pause before
+// the next one (stopping to actually catch a breath, not just the normal
+// tonguing gap between notes) can also restart the phrase — not just a
+// wrong note. null whenever there's no "clock running" (at the start of a
+// rep, or already mid-flash from a pass/fail).
+let lastSequenceNoteEndAt = null;
 
 // Sequences tab: the phrase currently being assembled before saving.
 let builderSemitones = [];
@@ -89,12 +101,14 @@ function isPracticeActive() {
   return activeSequence !== null || practiceSwaraSemitones !== null;
 }
 
-// Rewinds to the first note without touching the aggregate — used both
-// when a wrong note ends the attempt and when a full pass completes.
+// Rewinds to the first note without touching the aggregate — used when a
+// wrong note ends the attempt, a full pass completes, or the player pauses
+// too long mid-phrase.
 function resetSequenceRep() {
   if (!activeSequence) return;
   sequencePosition = 0;
   sequenceRepResults = new Array(activeSequence.swaraSemitones.length).fill(null);
+  lastSequenceNoteEndAt = null;
 }
 
 function resetSequenceProgress() {
@@ -157,6 +171,7 @@ const detector = new SoundDetector({
     currentNotePitchCents = [];
     lastPitchSampleAt = null;
     pitchHoldTracker.reset();
+    lastSequenceNoteEndAt = null; // they've resumed — stop the breath-timeout clock
     bestAudioRecorder.startRecording(audioInput.getStream());
     ui.setState("TIMING");
   },
@@ -205,6 +220,9 @@ const detector = new SoundDetector({
               renderSequenceUI();
             }, SEQUENCE_RESET_FLASH_MS);
           } else {
+            // Advanced to the next note, still mid-phrase — start the
+            // breath-timeout clock for the gap before it's played.
+            lastSequenceNoteEndAt = now;
             renderSequenceUI();
           }
         }
@@ -337,6 +355,21 @@ function frame() {
         }
       }
     }
+  }
+
+  // Mid-phrase but paused too long before starting the next note (e.g.
+  // stopped to take a breath) — treat that as giving up on the rep, not
+  // just skipping ahead. Guarded by sequenceResetTimeout so this doesn't
+  // double-fire alongside the existing pass/fail flash-then-reset.
+  if (
+    activeSequence &&
+    sequencePosition > 0 &&
+    sequenceResetTimeout === null &&
+    lastSequenceNoteEndAt !== null &&
+    now - lastSequenceNoteEndAt > SEQUENCE_BREATH_TIMEOUT_MS
+  ) {
+    resetSequenceRep();
+    renderSequenceUI();
   }
 
   rafHandle = requestAnimationFrame(frame);
