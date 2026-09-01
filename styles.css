@@ -327,6 +327,10 @@ body {
 }
 
 .swara-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
   padding: 10px 6px;
   border-radius: 10px;
   border: 1px solid var(--panel-border);
@@ -335,6 +339,17 @@ body {
   font-size: 0.85rem;
   font-weight: 600;
   cursor: pointer;
+}
+
+.swara-btn small {
+  font-size: 0.62rem;
+  font-weight: 500;
+  color: var(--text-dim);
+}
+
+.swara-btn.is-active small {
+  color: #06231f;
+  opacity: 0.75;
 }
 
 .swara-btn:active {
@@ -610,6 +625,23 @@ body {
 .sequence-chip.is-current {
   border-color: var(--accent);
   color: var(--accent);
+}
+
+.sequence-chip[data-result="pass"] {
+  border-color: var(--timing);
+  color: var(--timing);
+  background: rgba(34, 197, 94, 0.12);
+}
+
+.sequence-chip[data-result="fail"] {
+  border-color: var(--danger);
+  color: var(--danger);
+  background: rgba(239, 68, 68, 0.12);
+}
+
+.sequence-chip-mark {
+  margin-left: 6px;
+  font-weight: 700;
 }
 
 .sequence-summary {

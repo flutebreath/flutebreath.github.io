@@ -348,7 +348,8 @@ export class UI {
   }
 
   // swaraSemitones: the sequence's notes. repResults: array same length,
-  // each entry a tier string or null (not played yet this rep).
+  // each entry a final tier string ("green"/"yellow"/"red"/"none") once
+  // that note has been played and committed, or null while still pending.
   // currentPosition: index of the note currently up next/being played.
   renderSequenceRow(swaraSemitones, repResults, currentPosition) {
     const row = this.el.sequenceRow;
@@ -356,8 +357,20 @@ export class UI {
     swaraSemitones.forEach((semitones, i) => {
       const chip = document.createElement("span");
       chip.className = "sequence-chip";
-      chip.textContent = swaraNameFor(semitones);
-      if (repResults[i]) chip.dataset.tier = repResults[i];
+
+      const label = document.createElement("span");
+      label.textContent = swaraNameFor(semitones);
+      chip.appendChild(label);
+
+      const result = repResults[i];
+      if (result) {
+        const passed = result !== "red" && result !== "none";
+        chip.dataset.result = passed ? "pass" : "fail";
+        const mark = document.createElement("span");
+        mark.className = "sequence-chip-mark";
+        mark.textContent = passed ? "✓" : "✗";
+        chip.appendChild(mark);
+      }
       if (i === currentPosition) chip.classList.add("is-current");
       row.appendChild(chip);
     });

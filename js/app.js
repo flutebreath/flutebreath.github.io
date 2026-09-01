@@ -14,6 +14,10 @@ const STOP_MARGIN_GAP_DB = 6; // stop threshold sits this many dB below the star
 const START_CONFIRM_MS = 80;
 const STOP_CONFIRM_MS = 250;
 const COMPLETE_FLASH_MS = 900;
+// How long to show a just-finished sequence note's ✓/✗ before either
+// advancing is instant (no flash needed) or, on a wrong note / a full
+// completed pass, resetting back to the start of the phrase.
+const SEQUENCE_RESET_FLASH_MS = 900;
 // Mic streams often produce a brief loud pop/click as the hardware settles
 // right after getUserMedia connects, and picking the device up to position
 // it near the flute adds handling noise. Show the level meter immediately
@@ -62,10 +66,14 @@ let lastPitchSampleAt = null;
 
 // Sequence (sargam phrase) practice. activeSequence set means it takes
 // priority over single-swara practice — the two are mutually exclusive.
+// The phrase must be played correctly in order, in one go: a wrong note
+// resets back to the first note rather than skipping ahead, same as a
+// completed pass loops back to practice again.
 let activeSequence = null;
 let sequencePosition = 0;
-let sequenceRepResults = []; // per-position tier string or null, current rep
+let sequenceRepResults = []; // per-position final tier string or null, current rep
 let sequenceAggregate = []; // per-position {green,yellow,red,none} counts, this armed session
+let sequenceResetTimeout = null;
 
 // Sequences tab: the phrase currently being assembled before saving.
 let builderSemitones = [];
@@ -81,10 +89,18 @@ function isPracticeActive() {
   return activeSequence !== null || practiceSwaraSemitones !== null;
 }
 
-function resetSequenceProgress() {
+// Rewinds to the first note without touching the aggregate — used both
+// when a wrong note ends the attempt and when a full pass completes.
+function resetSequenceRep() {
   if (!activeSequence) return;
   sequencePosition = 0;
   sequenceRepResults = new Array(activeSequence.swaraSemitones.length).fill(null);
+}
+
+function resetSequenceProgress() {
+  if (!activeSequence) return;
+  clearTimeout(sequenceResetTimeout);
+  resetSequenceRep();
   sequenceAggregate = activeSequence.swaraSemitones.map(() => ({ green: 0, yellow: 0, red: 0, none: 0 }));
 }
 
@@ -164,16 +180,34 @@ const detector = new SoundDetector({
       const tier = hasPitch ? accuracyTier(avgCents) : "none";
 
       if (activeSequence) {
+        const passed = tier !== "red" && tier !== "none";
         sequenceRepResults[sequencePosition] = tier;
         sequenceAggregate[sequencePosition][tier] += 1;
-        sequencePosition += 1;
-        if (sequencePosition >= activeSequence.swaraSemitones.length) {
-          // Full pass through the phrase — loop back to the start so the
-          // player can keep repeating it without touching the screen.
-          sequencePosition = 0;
-          sequenceRepResults = new Array(activeSequence.swaraSemitones.length).fill(null);
+
+        if (!passed) {
+          // Wrong note — show the ✗ briefly, then restart the phrase from
+          // the beginning rather than skipping ahead as if it succeeded.
+          renderSequenceUI();
+          clearTimeout(sequenceResetTimeout);
+          sequenceResetTimeout = setTimeout(() => {
+            resetSequenceRep();
+            renderSequenceUI();
+          }, SEQUENCE_RESET_FLASH_MS);
+        } else {
+          sequencePosition += 1;
+          if (sequencePosition >= activeSequence.swaraSemitones.length) {
+            // Full correct pass through the phrase — show the final ✓
+            // briefly, then loop back to the start for another rep.
+            renderSequenceUI();
+            clearTimeout(sequenceResetTimeout);
+            sequenceResetTimeout = setTimeout(() => {
+              resetSequenceRep();
+              renderSequenceUI();
+            }, SEQUENCE_RESET_FLASH_MS);
+          } else {
+            renderSequenceUI();
+          }
         }
-        renderSequenceUI();
       } else {
         ui.setLivePitch(tier, avgCents);
       }
@@ -339,6 +373,7 @@ function disarm() {
   armed = false;
   armedAt = null;
   clearTimeout(completeFlashTimeout);
+  clearTimeout(sequenceResetTimeout);
   if (rafHandle) cancelAnimationFrame(rafHandle);
   rafHandle = null;
 
@@ -517,6 +552,7 @@ function startSequencePractice(id) {
 }
 
 function exitSequencePractice() {
+  clearTimeout(sequenceResetTimeout);
   activeSequence = null;
   sequencePosition = 0;
   sequenceRepResults = [];
