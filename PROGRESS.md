@@ -120,6 +120,24 @@ into the same aggregate ("1 of 2 times" not resetting to "1 of 1"), Exit
 correctly restoring the single-swara panel, and the History tab still
 rendering stats/consistency/attempts correctly after the move.
 
+**Sequence practice: reset-on-mistake + tick/cross marks** — originally
+sequences always advanced regardless of right/wrong, purely for
+diagnostics. User wanted the phrase actually gated: a wrong note resets
+to the first note rather than skipping past it, matching "play the whole
+phrase correctly in one go." Now a pass (green or yellow — "close" still
+counts) shows ✓ and advances; a fail (red or no pitch) shows ✗, holds for
+900ms so it's visible, then restarts the rep. A full correct pass still
+loops the same way. Aggregate stats keep accumulating across every
+reset, independent of the rep restarting. Also added the Sanskrit names
+(Shadja, Rishabh, Gandhar, Madhyam, Pancham, Dhaivat, Nishad) as visible
+subtext on the swara buttons rather than a `title` tooltip — those don't
+work on iOS Safari at all (no hover, long-press doesn't trigger them).
+
+Verified end-to-end with mocked audio, checking exact glyph + color +
+timing: a pass shows literal "✓" in the accent/green color and advances
+immediately; a fail shows literal "✗" in red, persists through the full
+900ms flash window (checked at t=0 and t=300ms), then resets.
+
 ## Known limitations (already stated to the user, worth remembering)
 
 - Swara tuning is standard 12-tone equal temperament, **not** microtonal
